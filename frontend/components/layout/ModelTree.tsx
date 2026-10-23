@@ -10,7 +10,6 @@ import {
   Anchor,
   Cpu,
   Plus,
-  LayoutGrid,
   Trash2,
   Camera,
   Fan,
@@ -19,14 +18,13 @@ import {
 } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import clsx from "clsx";
-import type { ComponentKind, ComponentStatus } from "@/lib/types/contract";
+import type { ComponentKind } from "@/lib/types/contract";
 
 function getComponentIcon(kind: ComponentKind) {
   switch (kind) {
     case "camera":
       return Camera;
     case "motor":
-      return Fan;
     case "fan":
       return Fan;
     case "gyro":
@@ -39,66 +37,62 @@ function getComponentIcon(kind: ComponentKind) {
   }
 }
 
-function getComponentFriendlyName(kind: ComponentKind) {
+function getComponentLabel(kind: ComponentKind) {
   switch (kind) {
     case "motor":
-      return "Motor & Propeller";
+      return "Motor";
     case "camera":
-      return "4K Gimbal Camera";
+      return "Camera";
     case "gyro":
-      return "Flight Gyro Sensor";
+      return "Gyro Sensor";
     case "fc":
       return "Flight Controller";
     case "fan":
-      return "Cooling Fan";
+      return "Fan";
     case "battery":
-      return "Battery Pack";
+      return "Battery";
     default:
-      return "Attached Payload";
+      return "Component";
   }
 }
 
-function TreeSection({
+function Section({
   title,
   icon: Icon,
-  badge,
+  count,
   children,
   defaultOpen = true,
-  action,
 }: {
   title: string;
   icon: React.ElementType;
-  badge?: string | number;
+  count?: number;
   children: React.ReactNode;
   defaultOpen?: boolean;
-  action?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-b border-[#21262d]">
-      <div className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-[#161b22] transition-colors">
-        <button
-          className="flex flex-1 items-center gap-2"
-          onClick={() => setOpen(!open)}
-        >
+    <div className="border-b border-line-subtle">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-panel transition-colors"
+        onClick={() => setOpen(!open)}
+      >
+        <div className="flex items-center gap-1.5 truncate">
           {open ? (
-            <ChevronDown size={13} className="text-[#6e7681]" />
+            <ChevronDown size={12} className="text-muted shrink-0" />
           ) : (
-            <ChevronRight size={13} className="text-[#6e7681]" />
+            <ChevronRight size={12} className="text-muted shrink-0" />
           )}
-          <Icon size={14} className="text-cyan-400" />
-          <span className="text-[11px] font-bold tracking-wider text-[#cbd5e1] uppercase">
-            {title}
+          <Icon size={13} className="text-accent shrink-0" />
+          <span className="text-xs font-semibold text-ink-2 truncate">{title}</span>
+        </div>
+        {count != null && (
+          <span className="rounded bg-panel px-1.5 py-0.2 text-[10px] font-mono text-muted">
+            {count}
           </span>
-          {badge != null && (
-            <span className="rounded-full bg-slate-800 px-1.5 py-0.2 text-[10px] font-mono text-[#8b949e]">
-              {badge}
-            </span>
-          )}
-        </button>
-        {action}
-      </div>
-      {open && <div className="pb-1.5">{children}</div>}
+        )}
+      </button>
+      {open && <div className="pb-1">{children}</div>}
     </div>
   );
 }
@@ -107,290 +101,256 @@ export default function ModelTree() {
   const design = useStore((s) => s.design);
   const analysis = useStore((s) => s.analysis);
   const selection = useStore((s) => s.selection);
-  const setSelection = useStore((s) => s.setSelection);
   const leftSidebarOpen = useStore((s) => s.ui.leftSidebarOpen);
+  const setSelection = useStore((s) => s.setSelection);
   const setUi = useStore((s) => s.setUi);
   const deleteComponent = useStore((s) => s.deleteComponent);
 
-  const statusMap = new Map<string, ComponentStatus>(
-    analysis?.components.map((c) => [c.id, c.status]) ?? []
-  );
-
+  // Collapsed 48 px icon rail
   if (!leftSidebarOpen) {
     return (
-      <button
-        onClick={() => setUi({ leftSidebarOpen: true })}
-        className="absolute left-3 top-14 z-20 flex items-center gap-2 rounded-xl border border-white/[0.1] bg-[#0d1117]/90 px-3 py-2 text-xs font-semibold text-[#cbd5e1] shadow-2xl backdrop-blur-md transition-all hover:bg-[#161b22] hover:text-white hover:border-cyan-500/40"
-        title="Open Machine Parts List"
-      >
-        <Layers size={14} className="text-cyan-400" />
-        <span>Parts List</span>
-        <ChevronRight size={13} className="text-[#6e7681]" />
-      </button>
+      <aside className="relative flex h-full w-12 shrink-0 flex-col items-center border-r border-line bg-surface py-2 z-10 transition-all duration-150">
+        <button
+          type="button"
+          onClick={() => setUi({ leftSidebarOpen: true })}
+          className="btn-ghost flex h-8 w-8 items-center justify-center rounded-md text-muted hover:text-ink hover:bg-panel transition-colors"
+          title="Expand Model Panel"
+          aria-label="Expand Model"
+        >
+          <ChevronRight size={15} />
+        </button>
+
+        <div className="my-2 h-px w-6 bg-line-subtle" />
+
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setUi({ leftSidebarOpen: true })}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted hover:text-accent hover:bg-panel transition-colors relative"
+            title="Components"
+            aria-label="Components"
+          >
+            <Cpu size={15} />
+            {design?.components.length ? (
+              <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-accent" />
+            ) : null}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setUi({ leftSidebarOpen: true })}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted hover:text-accent hover:bg-panel transition-colors"
+            title="Frame Members"
+            aria-label="Frame Members"
+          >
+            <Box size={15} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setUi({ leftSidebarOpen: true })}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted hover:text-accent hover:bg-panel transition-colors"
+            title="Supports"
+            aria-label="Supports"
+          >
+            <Anchor size={15} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setUi({ leftSidebarOpen: true, addComponentModalOpen: true })}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted hover:text-ok hover:bg-ok-soft transition-colors mt-2"
+            title="Add Component"
+            aria-label="Add Component"
+          >
+            <Plus size={15} />
+          </button>
+        </div>
+      </aside>
     );
   }
 
+  // Expanded 260 px Model Tree
   return (
-    <aside className="relative flex h-full w-72 shrink-0 flex-col border-r border-[#21262d] bg-[#0b0f15] shadow-2xl transition-all">
-      {/* Title & Quick Actions */}
-      <div className="flex flex-col border-b border-[#21262d] bg-[#0d1117] p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Layers size={15} className="text-cyan-400" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-white">
-              Machine Parts 🛠️
-            </h2>
-          </div>
-          <button
-            onClick={() => setUi({ leftSidebarOpen: false })}
-            className="rounded-lg p-1 text-[#6e7681] hover:bg-[#161b22] hover:text-[#e6edf3] transition-colors"
-            title="Minimize Panel"
-          >
-            <ChevronLeft size={16} />
-          </button>
+    <aside className="relative flex h-full w-[260px] shrink-0 flex-col border-r border-line bg-surface z-10 transition-all duration-150">
+      {/* Header */}
+      <div className="flex h-9 shrink-0 items-center justify-between border-b border-line px-3 bg-panel/50">
+        <div className="flex items-center gap-1.5">
+          <Layers size={13} className="text-accent" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-ink-2">Model</span>
         </div>
-        <p className="mt-1 text-[11px] text-[#8b949e]">
-          Click any part to change it, or click 🗑️ to delete it.
-        </p>
-
-        {/* Action Buttons */}
-        <div className="mt-2.5 flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-emerald-700/20 transition-all disabled:opacity-50"
+            type="button"
             onClick={() => setUi({ addComponentModalOpen: true })}
-            title="Add motor, camera, or sensor"
-            disabled={!design}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium text-accent hover:bg-accent-soft transition-colors"
+            title="Add new component"
           >
-            <Plus size={14} />
-            <span>Add New Part</span>
+            <Plus size={12} />
+            <span>Add</span>
           </button>
-
           <button
-            className="flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#161b22] hover:bg-[#21262d] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors"
-            onClick={() => setUi({ presetPickerOpen: true })}
-            title="Browse pre-made drones and templates"
+            type="button"
+            onClick={() => setUi({ leftSidebarOpen: false })}
+            className="p-1 rounded text-muted hover:text-ink hover:bg-panel transition-colors"
+            title="Collapse rail"
+            aria-label="Collapse rail"
           >
-            <LayoutGrid size={13} className="text-cyan-400" />
-            <span>Presets</span>
+            <ChevronLeft size={14} />
           </button>
         </div>
       </div>
 
+      {/* Model Tree List */}
       <div className="flex-1 overflow-y-auto">
         {!design ? (
-          <div className="p-6 text-center text-xs text-[#8b949e]">
-            Load an example drone or machine to see its parts.
+          <div className="p-4 text-center text-xs text-muted">
+            No design loaded. Load a preset to inspect components.
           </div>
         ) : (
           <>
-            {/* 1. Components / Payloads Section (Most important for users!) */}
-            <TreeSection
-              title="Attached Parts"
-              badge={design.components.length}
-              icon={Cpu}
-              defaultOpen={true}
-              action={
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setUi({ addComponentModalOpen: true });
-                  }}
-                  className="flex items-center gap-1 rounded bg-blue-500/10 border border-blue-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-blue-300 hover:bg-blue-500/20 transition-colors"
-                  title="Add a new component"
-                >
-                  <Plus size={11} />
-                  <span>Add</span>
-                </button>
-              }
-            >
-              {design.components.length === 0 ? (
-                <div className="px-4 py-3 text-center text-[11px] text-[#6e7681]">
-                  No parts attached yet. Click &quot;Add&quot; above to attach a motor or camera!
-                </div>
-              ) : (
-                design.components.map((c) => {
-                  const CompIcon = getComponentIcon(c.kind);
-                  const isSelected =
-                    selection.type === "component" && selection.id === c.id;
-                  const status = statusMap.get(c.id);
+            {/* 1. Components Section */}
+            <Section title="Components" icon={Cpu} count={design.components.length} defaultOpen={true}>
+              {design.components.map((c) => {
+                const Icon = getComponentIcon(c.kind);
+                const isSelected = selection.type === "component" && selection.id === c.id;
+                const compFinding = analysis?.components?.find((item) => item.id === c.id);
+                const status = compFinding?.status ?? (c.limit_g ? "ok" : undefined);
 
-                  return (
-                    <div
-                      key={c.id}
-                      className={clsx(
-                        "group relative flex items-center justify-between px-3 py-1.5 transition-colors",
-                        isSelected
-                          ? "bg-blue-500/20 text-blue-200 border-l-2 border-l-blue-400"
-                          : "text-[#cbd5e1] hover:bg-[#161b22]"
-                      )}
-                    >
-                      <button
-                        className="flex flex-1 min-w-0 items-center gap-2 text-left"
-                        onClick={() => setSelection({ type: "component", id: c.id })}
-                      >
-                        <div
-                          className={clsx(
-                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border",
-                            isSelected
-                              ? "border-blue-400/50 bg-blue-500/30 text-white"
-                              : "border-[#30363d] bg-[#161b22] text-slate-300"
-                          )}
-                        >
-                          <CompIcon size={12} />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="truncate text-xs font-semibold text-white">
-                              {getComponentFriendlyName(c.kind)}
-                            </span>
-                            <span className="font-mono text-[10px] text-slate-400">
-                              ({c.id})
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-[10px] text-[#8b949e]">
-                            <span>{(c.mass * 1000).toFixed(0)}g</span>
-                            <span>•</span>
-                            <span>{(c.s * 100).toFixed(0)}% on {c.member}</span>
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* Status indicator pill */}
-                      <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                        {status && (
-                          <span
-                            className={clsx(
-                              "rounded-full px-1.5 py-0.5 text-[9px] font-semibold tracking-wide uppercase",
-                              status === "ok" && "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
-                              status === "warning" && "bg-amber-500/15 text-amber-300 border border-amber-500/30",
-                              status === "critical" && "bg-red-500/20 text-red-300 border border-red-500/40 animate-pulse"
-                            )}
-                            title={
-                              status === "ok"
-                                ? "Safe & Smooth"
-                                : status === "warning"
-                                ? "Wobbly"
-                                : "Violent shaking! Click to inspect"
-                            }
-                          >
-                            {status === "ok" ? "Safe" : status === "warning" ? "Wobbly" : "Danger"}
+                return (
+                  <div
+                    key={c.id}
+                    className={clsx(
+                      "group flex items-center justify-between px-2.5 py-1.5 transition-colors cursor-pointer border-l-2",
+                      isSelected
+                        ? "bg-accent-soft/60 border-accent"
+                        : "border-transparent hover:bg-panel"
+                    )}
+                    onClick={() => setSelection({ type: "component", id: c.id })}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1 pr-1">
+                      <Icon size={13} className={isSelected ? "text-accent" : "text-muted"} />
+                      <div className="min-w-0 flex-1 truncate">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="text-xs font-medium text-ink truncate">
+                            {getComponentLabel(c.kind)}
                           </span>
-                        )}
-
-                        {/* EXPLICIT DELETE BUTTON ON EVERY COMPONENT ROW */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteComponent(c.id);
-                          }}
-                          className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-slate-400 hover:border-red-500/40 hover:bg-red-500/20 hover:text-red-300 transition-colors"
-                          title={`Delete ${c.kind} (${c.id})`}
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                          <span className="font-mono text-[10px] text-muted truncate">
+                            {c.id}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-muted truncate font-mono">
+                          {(c.mass * 1000).toFixed(0)}g on {c.member} ({Math.round(c.s * 100)}%)
+                        </div>
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </TreeSection>
 
-            {/* 2. Structural Beams / Arms */}
-            <TreeSection
-              title="Frame & Arms"
-              badge={design.members.length}
-              icon={Box}
-              defaultOpen={true}
-            >
+                    <div className="flex items-center gap-1 shrink-0">
+                      {status && (
+                        <span
+                          className={clsx(
+                            "rounded px-1.5 py-0.2 text-[9px] font-semibold tracking-wide uppercase font-mono",
+                            status === "ok" && "bg-ok-soft text-ok",
+                            status === "warning" && "bg-warn-soft text-warn",
+                            status === "critical" && "bg-danger-soft text-danger"
+                          )}
+                        >
+                          {status}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteComponent(c.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-muted hover:text-danger rounded transition-opacity"
+                        title={`Delete ${c.id}`}
+                        aria-label={`Delete ${c.id}`}
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </Section>
+
+            {/* 2. Structure Frame Members */}
+            <Section title="Frame Members" icon={Box} count={design.members.length} defaultOpen={true}>
               {design.members.map((m) => {
-                const isSelected =
-                  selection.type === "member" && selection.id === m.id;
+                const isSelected = selection.type === "member" && selection.id === m.id;
                 return (
                   <button
+                    type="button"
                     key={m.id}
                     className={clsx(
-                      "flex w-full items-center justify-between px-3 py-1.5 text-left text-xs transition-colors",
+                      "flex w-full items-center justify-between px-3 py-1.5 text-left transition-colors border-l-2",
                       isSelected
-                        ? "bg-blue-500/20 text-blue-200 border-l-2 border-l-blue-400"
-                        : "text-[#cbd5e1] hover:bg-[#161b22]"
+                        ? "bg-accent-soft/60 border-accent"
+                        : "border-transparent hover:bg-panel"
                     )}
                     onClick={() => setSelection({ type: "member", id: m.id })}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-200">Arm {m.id}</span>
-                      <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[10px] text-[#8b949e] uppercase">
-                        {m.material === "cfrp" ? "Carbon Fiber" : m.material.replace("_", " ")}
+                    <div className="truncate">
+                      <span className="text-xs font-medium text-ink">Arm {m.id}</span>
+                      <span className="ml-1.5 font-mono text-[10px] text-muted">
+                        {m.material}
                       </span>
                     </div>
-                    <span className="font-mono text-[10px] text-slate-500">
+                    <span className="font-mono text-[10px] text-muted shrink-0">
                       {m.n1} → {m.n2}
                     </span>
                   </button>
                 );
               })}
-            </TreeSection>
+            </Section>
 
-            {/* 3. Supports / Anchors */}
-            <TreeSection
-              title="Mount Supports"
-              badge={design.supports.length}
-              icon={Anchor}
-              defaultOpen={false}
-            >
+            {/* 3. Supports & Anchors */}
+            <Section title="Supports" icon={Anchor} count={design.supports.length} defaultOpen={false}>
               {design.supports.map((s) => (
                 <button
+                  type="button"
                   key={s.node}
                   className={clsx(
-                    "flex w-full items-center justify-between px-3 py-1.5 text-left text-xs transition-colors",
+                    "flex w-full items-center justify-between px-3 py-1.5 text-left transition-colors border-l-2",
                     selection.type === "support" && selection.id === s.node
-                      ? "bg-blue-500/20 text-blue-200 border-l-2 border-l-blue-400"
-                      : "text-[#cbd5e1] hover:bg-[#161b22]"
+                      ? "bg-accent-soft/60 border-accent"
+                      : "border-transparent hover:bg-panel"
                   )}
                   onClick={() => setSelection({ type: "support", id: s.node })}
                 >
-                  <span className="font-medium text-slate-300">
-                    Anchor at {s.node}
-                  </span>
-                  <span className="font-mono text-[10px] text-slate-500 uppercase">
+                  <span className="text-xs font-medium text-ink">Anchor {s.node}</span>
+                  <span className="font-mono text-[10px] text-muted uppercase">
                     {s.type}
                   </span>
                 </button>
               ))}
-            </TreeSection>
+            </Section>
 
-            {/* 4. Frame Joints (Nodes) */}
-            <TreeSection
-              title="Joint Points"
-              badge={design.nodes.length}
-              icon={Layers}
-              defaultOpen={false}
-            >
+            {/* 4. Joint Points (Nodes) */}
+            <Section title="Joints" icon={Layers} count={design.nodes.length} defaultOpen={false}>
               {design.nodes.map((n) => (
                 <button
+                  type="button"
                   key={n.id}
                   className={clsx(
-                    "flex w-full items-center justify-between px-3 py-1.5 text-left text-xs transition-colors",
+                    "flex w-full items-center justify-between px-3 py-1.5 text-left transition-colors border-l-2",
                     selection.type === "node" && selection.id === n.id
-                      ? "bg-blue-500/20 text-blue-200 border-l-2 border-l-blue-400"
-                      : "text-[#cbd5e1] hover:bg-[#161b22]"
+                      ? "bg-accent-soft/60 border-accent"
+                      : "border-transparent hover:bg-panel"
                   )}
                   onClick={() => setSelection({ type: "node", id: n.id })}
                 >
-                  <span className="font-medium text-slate-300">{n.id}</span>
-                  <span className="font-mono text-[10px] text-slate-500">
+                  <span className="text-xs font-medium text-ink">{n.id}</span>
+                  <span className="font-mono text-[10px] text-muted">
                     ({(n.x * 1000).toFixed(0)}, {(n.y * 1000).toFixed(0)}) mm
                   </span>
                 </button>
               ))}
-            </TreeSection>
+            </Section>
           </>
         )}
-      </div>
-
-      {/* Helpful keyboard shortcut tip */}
-      <div className="border-t border-[#21262d] bg-[#0d1117] p-2.5 text-center text-[10px] text-[#6e7681]">
-        💡 Press <kbd className="rounded border border-slate-700 bg-slate-800 px-1 text-slate-300">Del</kbd> on your keyboard to delete selected part!
       </div>
     </aside>
   );

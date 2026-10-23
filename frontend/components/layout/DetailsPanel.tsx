@@ -10,10 +10,11 @@ import type {
   MountPreset,
 } from "@/lib/types/contract";
 import {
-  Sliders,
   Box,
   Layers,
   Trash2,
+  Anchor,
+  Cpu,
 } from "lucide-react";
 
 export default function DetailsPanel() {
@@ -25,7 +26,7 @@ export default function DetailsPanel() {
 
   if (!design) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-xs text-[#6e7681]">
+      <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-xs text-muted">
         Select an element or load a preset to inspect properties
       </div>
     );
@@ -39,70 +40,62 @@ export default function DetailsPanel() {
       const result = analysis?.components.find((c) => c.id === comp.id);
 
       return (
-        <div className="space-y-4 p-3.5 text-xs">
+        <div className="space-y-4 p-3 text-xs">
           {/* Header with Title and Fast Delete Button */}
-          <div className="flex items-center justify-between border-b border-[#21262d] pb-3">
+          <div className="flex items-center justify-between border-b border-line pb-2.5">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
-                Inspecting Part
+              <span className="text-[10px] font-bold uppercase tracking-wider text-accent">
+                Part Inspector
               </span>
-              <h3 className="text-sm font-bold text-[#e6edf3] capitalize">
-                {comp.kind === "motor"
-                  ? "🌀 Motor & Propeller"
-                  : comp.kind === "camera"
-                  ? "📷 4K Gimbal Camera"
-                  : comp.kind === "gyro"
-                  ? "🎯 Flight Gyro Sensor"
-                  : comp.kind === "fan"
-                  ? "💨 Cooling Fan"
-                  : comp.kind}{" "}
-                <span className="text-slate-400 font-mono text-xs">({comp.id})</span>
+              <h3 className="text-sm font-semibold text-ink capitalize">
+                {comp.kind}{" "}
+                <span className="text-muted font-mono text-xs">({comp.id})</span>
               </h3>
-              <p className="font-mono text-[11px] text-[#8b949e]">
+              <p className="font-mono text-[11px] text-muted">
                 Mounted on {comp.member} @ {(comp.s * 100).toFixed(0)}%
               </p>
             </div>
 
-            {/* Quick delete button */}
             <button
+              type="button"
               onClick={() => deleteComponent(comp.id)}
-              className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 text-xs font-semibold text-red-400 transition-colors"
+              className="flex items-center gap-1.5 rounded border border-danger/30 bg-danger-soft px-2.5 py-1 text-xs font-semibold text-danger hover:bg-danger hover:text-white transition-colors"
               title="Delete this component"
             >
-              <Trash2 size={13} />
+              <Trash2 size={12} />
               <span>Delete</span>
             </button>
           </div>
 
-          {/* Friendly Health Status Card */}
+          {/* Health Status Card */}
           {result && (
             <div
-              className={`rounded-xl border p-3 ${
+              className={`rounded-md border p-2.5 ${
                 result.status === "critical"
-                  ? "border-red-500/50 bg-red-950/30 text-red-200"
+                  ? "border-danger/40 bg-danger-soft text-danger"
                   : result.status === "warning"
-                  ? "border-amber-500/50 bg-amber-950/30 text-amber-200"
-                  : "border-emerald-500/50 bg-emerald-950/30 text-emerald-200"
+                  ? "border-warn/40 bg-warn-soft text-warn"
+                  : "border-ok/40 bg-ok-soft text-ok"
               }`}
             >
               <div className="flex items-center justify-between">
                 <StatusChip status={result.status} />
                 <span className="font-mono text-xs font-bold">
-                  {result.peak_accel_g.toFixed(2)} g peak
+                  {result.peak_accel_g.toFixed(2)} g RMS
                 </span>
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-slate-200">
+              <p className="mt-1.5 text-[11px] leading-relaxed">
                 {result.status === "critical"
-                  ? `🚨 DANGER! Shaking violently at ${result.at_rpm.toLocaleString()} RPM! (Safe limit is ${comp.limit_g ?? 0.5} g). Videos will be blurry. Click "Auto-Fix" in the top bar to stop this shake!`
+                  ? `Critical: Exceeds safe limit (${comp.limit_g ?? 0.5} g RMS) at ${result.at_rpm.toLocaleString()} RPM. Soften mounts to attenuate.`
                   : result.status === "warning"
-                  ? `⚠️ A bit wobbly at ${result.at_rpm.toLocaleString()} RPM. Noticeable vibration.`
-                  : `✅ Smooth & Calm! Shaking is well below danger levels. Perfect!`}
+                  ? `Warning: Elevated vibration at ${result.at_rpm.toLocaleString()} RPM.`
+                  : `Safe: Vibration levels remain comfortably below limit across operating speeds.`}
               </p>
             </div>
           )}
 
           {/* Position Along Arm */}
-          <Field label={`Where on Arm: ${(comp.s * 100).toFixed(0)}% (${comp.s < 0.3 ? "Near Center" : comp.s > 0.7 ? "Near Tip" : "Mid-Span"})`}>
+          <Field label={`Span Position: ${(comp.s * 100).toFixed(0)}%`}>
             <input
               type="range"
               step={0.01}
@@ -117,17 +110,17 @@ export default function DetailsPanel() {
                   ),
                 }))
               }
-              className="w-full accent-cyan-400"
+              className="w-full"
             />
-            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-              <span>Center (0%)</span>
-              <span>Middle (50%)</span>
+            <div className="flex justify-between text-[10px] text-muted font-mono mt-0.5">
+              <span>Root (0%)</span>
+              <span>Mid (50%)</span>
               <span>Tip (100%)</span>
             </div>
           </Field>
 
           {/* Weight */}
-          <Field label={`Weight: ${(comp.mass * 1000).toFixed(0)} grams (${comp.mass} kg)`}>
+          <Field label={`Mass: ${(comp.mass * 1000).toFixed(0)} g (${comp.mass} kg)`}>
             <input
               type="number"
               step={0.005}
@@ -146,17 +139,17 @@ export default function DetailsPanel() {
             />
           </Field>
 
-          {/* Mount Isolator Presets (Shock Absorbers) */}
-          <div className="rounded-xl border border-[#21262d] bg-[#111820] p-3 space-y-2.5">
+          {/* Mount Isolator Presets */}
+          <div className="rounded-md border border-line bg-panel p-2.5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-bold uppercase tracking-wider text-cyan-400 text-[10px]">
-                Shock Absorber Cushion Pad
+              <span className="font-semibold uppercase tracking-wider text-accent text-[10px]">
+                Mount Isolator
               </span>
-              <span className="text-[10px] text-slate-400">Protects from shake</span>
+              <span className="text-[10px] text-muted">Vibration cushion</span>
             </div>
 
             <div>
-              <label className="text-[10px] text-slate-400 block mb-1">Cushion Material</label>
+              <label className="text-[10px] text-muted block mb-0.5">Mount Preset</label>
               <select
                 value={comp.mount.preset}
                 onChange={(e) => {
@@ -189,7 +182,7 @@ export default function DetailsPanel() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Stiffness (N/m)">
+              <Field label="Stiffness kv (N/m)">
                 <input
                   type="number"
                   step={1000}
@@ -211,7 +204,7 @@ export default function DetailsPanel() {
                 />
               </Field>
 
-              <Field label="Damping (ζ)">
+              <Field label="Damping Ratio (ζ)">
                 <input
                   type="number"
                   step={0.01}
@@ -235,7 +228,7 @@ export default function DetailsPanel() {
           </div>
 
           {comp.limit_g != null && (
-            <Field label="Safe Shake Limit (g) — higher means more tolerant">
+            <Field label="Acceleration Limit (g RMS)">
               <input
                 type="number"
                 step={0.1}
@@ -254,23 +247,6 @@ export default function DetailsPanel() {
               />
             </Field>
           )}
-
-          {/* Big Prominent Component Deletion Card */}
-          <div className="mt-4 rounded-xl border border-red-500/30 bg-red-950/20 p-3">
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-red-300">
-              Remove this Part
-            </span>
-            <p className="mt-1 text-[11px] text-slate-300">
-              Remove this {comp.kind} from your design. The simulation updates instantly.
-            </p>
-            <button
-              onClick={() => deleteComponent(comp.id)}
-              className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/50 bg-red-600 hover:bg-red-500 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-red-950/40 transition-all"
-            >
-              <Trash2 size={14} />
-              <span>Delete {comp.kind} ({comp.id})</span>
-            </button>
-          </div>
         </div>
       );
     }
@@ -282,12 +258,12 @@ export default function DetailsPanel() {
       const mat = MATERIALS[member.material] ?? MATERIALS.aluminium_6061;
 
       return (
-        <div className="space-y-4 p-3.5 text-xs">
+        <div className="space-y-4 p-3 text-xs">
           <div>
-            <h3 className="text-sm font-semibold text-[#e6edf3]">
+            <h3 className="text-sm font-semibold text-ink">
               Member {member.id}
             </h3>
-            <p className="font-mono text-[11px] text-[#6e7681]">
+            <p className="font-mono text-[11px] text-muted">
               Span: Node {member.n1} → Node {member.n2}
             </p>
           </div>
@@ -316,24 +292,24 @@ export default function DetailsPanel() {
               </select>
             </Field>
 
-            <div className="mt-2 grid grid-cols-3 gap-1 rounded bg-[#161b22] p-2 font-mono text-[10px] text-[#8b949e]">
+            <div className="mt-2 grid grid-cols-3 gap-1 rounded bg-panel p-2 font-mono text-[10px] text-muted border border-line-subtle">
               <div>
-                <span className="text-[#6e7681] block">E:</span>
+                <span className="text-ink-2 font-semibold block">E:</span>
                 {(mat.E / 1e9).toFixed(0)} GPa
               </div>
               <div>
-                <span className="text-[#6e7681] block">ρ:</span>
+                <span className="text-ink-2 font-semibold block">Density:</span>
                 {mat.rho} kg/m³
               </div>
               <div>
-                <span className="text-[#6e7681] block">Yield:</span>
+                <span className="text-ink-2 font-semibold block">Yield:</span>
                 {mat.yield_mpa} MPa
               </div>
             </div>
           </div>
 
           {/* Cross-Section Type & Dimensions */}
-          <div className="space-y-3 rounded-lg border border-[#21262d] bg-[#111820] p-3">
+          <div className="space-y-3 rounded-md border border-line bg-panel p-2.5">
             <Field label="Cross-Section Profile">
               <select
                 value={member.section.type}
@@ -484,7 +460,7 @@ export default function DetailsPanel() {
 
             {member.section.type === "box" && (
               <div className="grid grid-cols-3 gap-1.5">
-                <Field label="Width w">
+                <Field label="Width w (mm)">
                   <input
                     type="number"
                     step={0.5}
@@ -505,7 +481,7 @@ export default function DetailsPanel() {
                     className="w-full"
                   />
                 </Field>
-                <Field label="Height h">
+                <Field label="Height h (mm)">
                   <input
                     type="number"
                     step={0.5}
@@ -526,7 +502,7 @@ export default function DetailsPanel() {
                     className="w-full"
                   />
                 </Field>
-                <Field label="Wall t">
+                <Field label="Wall t (mm)">
                   <input
                     type="number"
                     step={0.1}
@@ -560,12 +536,12 @@ export default function DetailsPanel() {
       if (!support) return null;
 
       return (
-        <div className="space-y-4 p-3.5 text-xs">
+        <div className="space-y-4 p-3 text-xs">
           <div>
-            <h3 className="text-sm font-semibold text-[#e6edf3]">
+            <h3 className="text-sm font-semibold text-ink">
               Support on Node {support.node}
             </h3>
-            <p className="font-mono text-[11px] text-[#6e7681]">
+            <p className="font-mono text-[11px] text-muted">
               Boundary Condition Configuration
             </p>
           </div>
@@ -593,7 +569,7 @@ export default function DetailsPanel() {
           </Field>
 
           {support.type === "spring" && (
-            <div className="space-y-2 rounded-lg border border-[#21262d] bg-[#111820] p-3">
+            <div className="space-y-2 rounded-md border border-line bg-panel p-2.5">
               <Field label="Vertical Stiffness ky (N/m)">
                 <input
                   type="number"
@@ -638,37 +614,37 @@ export default function DetailsPanel() {
 
     // Default: Structure Overview
     return (
-      <div className="space-y-4 p-3.5 text-xs">
+      <div className="space-y-4 p-3 text-xs">
         <div>
-          <h3 className="text-sm font-semibold text-[#e6edf3]">{design.name}</h3>
-          <p className="text-[11px] text-[#6e7681]">Plane: XY Line-Body Model</p>
+          <h3 className="text-sm font-semibold text-ink">{design.name}</h3>
+          <p className="text-[11px] text-muted">XY Line-Body 2D Finite Element Model</p>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <Stat label="Nodes" value={design.nodes.length} icon={Layers} />
           <Stat label="Members" value={design.members.length} icon={Box} />
-          <Stat label="Components" value={design.components.length} icon={Sliders} />
-          <Stat label="Supports" value={design.supports.length} icon={Layers} />
+          <Stat label="Components" value={design.components.length} icon={Cpu} />
+          <Stat label="Supports" value={design.supports.length} icon={Anchor} />
         </div>
 
         {analysis && (
-          <div className="space-y-2 rounded-lg border border-[#30363d] bg-[#161b22] p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#6e7681]">
+          <div className="space-y-1.5 rounded-md border border-line bg-panel p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
               Solver Diagnostics
             </p>
-            <div className="flex items-center justify-between font-mono">
-              <span className="text-[#8b949e]">Solve Time:</span>
-              <span className="font-semibold text-cyan-400">
+            <div className="flex items-center justify-between font-mono text-[11px]">
+              <span className="text-muted">Solve Time:</span>
+              <span className="font-semibold text-accent">
                 {analysis.meta.solve_ms.toFixed(1)} ms ({analysis.meta.method.toUpperCase()})
               </span>
             </div>
-            <div className="flex items-center justify-between font-mono">
-              <span className="text-[#8b949e]">System DOFs:</span>
-              <span className="text-[#e6edf3]">{analysis.meta.n_dof} DOFs</span>
+            <div className="flex items-center justify-between font-mono text-[11px]">
+              <span className="text-muted">System DOFs:</span>
+              <span className="text-ink">{analysis.meta.n_dof} DOFs</span>
             </div>
-            <div className="flex items-center justify-between font-mono">
-              <span className="text-[#8b949e]">Modes Kept:</span>
-              <span className="text-[#e6edf3]">{analysis.meta.n_modes_kept} Modes</span>
+            <div className="flex items-center justify-between font-mono text-[11px]">
+              <span className="text-muted">Modes Kept:</span>
+              <span className="text-ink">{analysis.meta.n_modes_kept} Modes</span>
             </div>
           </div>
         )}
@@ -677,7 +653,7 @@ export default function DetailsPanel() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#0b0f15]">
+    <div className="flex h-full w-full flex-col bg-surface">
       <div className="flex-1 overflow-y-auto">{renderContent()}</div>
     </div>
   );
@@ -692,7 +668,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-[#6e7681]">
+      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted">
         {label}
       </span>
       {children}
@@ -710,11 +686,11 @@ function Stat({
   icon: React.ElementType;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded border border-[#21262d] bg-[#161b22] p-2.5">
-      <Icon size={14} className="text-blue-400 shrink-0" />
+    <div className="flex items-center gap-2 rounded border border-line bg-panel p-2">
+      <Icon size={14} className="text-accent shrink-0" />
       <div>
-        <p className="text-[10px] text-[#6e7681]">{label}</p>
-        <p className="font-mono text-sm font-semibold text-[#e6edf3]">{value}</p>
+        <p className="text-[10px] text-muted">{label}</p>
+        <p className="font-mono text-xs font-semibold text-ink">{value}</p>
       </div>
     </div>
   );
