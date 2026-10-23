@@ -13,31 +13,31 @@ export default function Colorbar({
   min,
   max,
   unit = "mm",
-  label = "Vibration",
+  label = "Amplitude",
 }: Props) {
   return (
-    <div className="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-3 rounded-xl border border-white/[0.1] bg-[#0b0f15]/90 p-2.5 shadow-xl backdrop-blur-md">
+    <div className="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-2.5 rounded-md glass-panel p-2 shadow-xs">
       <div
-        className="h-28 w-3 rounded-full border border-white/[0.1] shadow-inner"
+        className="h-24 w-2.5 rounded-full border border-line shadow-inner"
         style={{ background: jetGradient() }}
       />
-      <div className="flex h-28 flex-col justify-between text-[10px]">
+      <div className="flex h-24 flex-col justify-between text-[10px] font-mono">
         <div>
-          <div className="font-bold text-red-400 font-mono">
+          <span className="font-semibold text-danger">
             {max.toFixed(2)} {unit}
-          </div>
-          <div className="text-[9px] font-semibold text-red-300">🔴 Violent Shake</div>
+          </span>
+          <div className="text-[9px] text-muted">Max</div>
         </div>
 
-        <div className="text-[9px] font-bold text-amber-300">
-          🟡 {label}
+        <div className="text-[9px] text-muted font-sans font-medium">
+          {label}
         </div>
 
         <div>
-          <div className="font-bold text-blue-400 font-mono">
+          <span className="font-semibold text-accent">
             {min.toFixed(2)} {unit}
-          </div>
-          <div className="text-[9px] font-semibold text-blue-300">🔵 Calm &amp; Still</div>
+          </span>
+          <div className="text-[9px] text-muted">Min</div>
         </div>
       </div>
     </div>

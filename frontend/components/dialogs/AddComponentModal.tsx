@@ -22,61 +22,52 @@ import clsx from "clsx";
 
 const KIND_DETAILS: Record<
   ComponentKind,
-  { label: string; icon: React.ElementType; desc: string; emoji: string }
+  { label: string; icon: React.ElementType; desc: string }
 > = {
   camera: {
-    label: "4K Camera",
+    label: "Camera",
     icon: Camera,
-    desc: "Captures video. Hates vibrations because shakes make footage blurry.",
-    emoji: "📷",
+    desc: "Sensitive optical payload. Sensitive to high-frequency blur.",
   },
   motor: {
-    label: "BLDC Motor & Prop",
+    label: "BLDC Motor",
     icon: Fan,
-    desc: "Spins super fast to create lift, which creates the vibration source.",
-    emoji: "🌀",
+    desc: "Primary rotational excitation source spinning at operational RPM.",
   },
   gyro: {
-    label: "Gyro / IMU Sensor",
+    label: "Gyro / IMU",
     icon: Navigation,
-    desc: "Measures drone balance to steer. Needs calm, smooth mounting.",
-    emoji: "🎯",
+    desc: "Flight stabilization sensor requiring quiet mounting.",
   },
   fc: {
     label: "Flight Computer",
     icon: Navigation,
-    desc: "The brain of the drone. Runs autopilots and orientation sensors.",
-    emoji: "🧠",
+    desc: "Autopilot processor and orientation sensor suite.",
   },
   fan: {
     label: "Cooling Fan",
     icon: Fan,
-    desc: "Blows air over hot electronics. Can cause spinning hum vibrations.",
-    emoji: "💨",
+    desc: "Auxiliary cooling blade with multi-harmonic excitation.",
   },
   battery: {
-    label: "LiPo Battery",
+    label: "Battery Pack",
     icon: Battery,
-    desc: "Heavy battery pack. Adds mass to center of gravity.",
-    emoji: "🔋",
+    desc: "Concentrated mass pack without internal excitation.",
   },
   pump: {
-    label: "Liquid Pump",
+    label: "Pump",
     icon: Box,
-    desc: "Pumps fluids with rhythmic pulses.",
-    emoji: "💧",
+    desc: "Reciprocating or rotating pump mechanism.",
   },
   compressor: {
-    label: "Air Compressor",
+    label: "Compressor",
     icon: Box,
-    desc: "Heavier rotating pump.",
-    emoji: "⚙️",
+    desc: "Mechanical compressor with rotating unbalance.",
   },
   generic: {
-    label: "Counterweight (Mass)",
+    label: "Lumped Mass",
     icon: Box,
-    desc: "General weight or tuned mass damper to cancel vibrations.",
-    emoji: "🧊",
+    desc: "General payload mass or tuned vibration absorber.",
   },
 };
 
@@ -163,7 +154,7 @@ export default function AddComponentModal() {
 
     updateDesign(() => nextDesign);
     setUi({ addComponentModalOpen: false, isAnalyzing: true });
-    showToast(`🚀 Added ${KIND_DETAILS[kind].label} (${newId})!`, "success");
+    showToast(`Added ${KIND_DETAILS[kind].label} (${newId}).`, "success");
 
     try {
       const res = await analyze(nextDesign);
@@ -174,41 +165,42 @@ export default function AddComponentModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-fade-in">
-      <div className="relative flex max-h-[92vh] w-full max-w-xl flex-col rounded-2xl border border-cyan-500/30 bg-[#0d131f] shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-100">
+      <div className="relative flex max-h-[92vh] w-full max-w-xl flex-col rounded-lg border border-line bg-surface shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#21262d] bg-[#0f1726] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-line bg-panel/50 px-5 py-3.5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
-              <Plus size={18} />
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-soft text-accent">
+              <Plus size={16} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">
-                Add a Part to your Machine 🛠️
-              </h2>
-              <p className="text-[11px] text-slate-400">
-                Choose what part to attach, where to place it, and how to cushion it!
+              <h2 className="text-sm font-semibold text-ink">Add Component</h2>
+              <p className="text-xs text-muted">
+                Select component kind, attachment point, and mount isolator properties
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setUi({ addComponentModalOpen: false })}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+            className="rounded p-1 text-muted hover:text-ink hover:bg-panel transition-colors"
+            aria-label="Close"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Form Body */}
-        <div className="flex-1 space-y-4 overflow-y-auto p-6 text-xs">
-          {/* Part Type Cards */}
+        <div className="flex-1 space-y-4 overflow-y-auto p-5 text-xs">
+          {/* Part Type Selection */}
           <div>
-            <label className="mb-2 block font-bold uppercase tracking-wider text-cyan-400 text-[10px]">
-              1. Choose What Kind of Part
+            <label className="mb-2 block font-semibold uppercase tracking-wider text-muted text-[10px]">
+              1. Component Kind
             </label>
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2">
               {(["camera", "motor", "gyro", "fan", "battery", "generic"] as ComponentKind[]).map((k) => {
                 const info = KIND_DETAILS[k];
+                const Icon = info.icon;
                 const isSelected = kind === k;
                 return (
                   <button
@@ -216,22 +208,22 @@ export default function AddComponentModal() {
                     type="button"
                     onClick={() => handleKindChange(k)}
                     className={clsx(
-                      "flex flex-col items-start rounded-xl border p-2.5 text-left transition-all",
+                      "flex flex-col items-start rounded-md border p-2.5 text-left transition-all",
                       isSelected
-                        ? "border-cyan-400 bg-cyan-500/20 text-white shadow-md shadow-cyan-950/40"
-                        : "border-[#21262d] bg-[#141b28] text-slate-300 hover:border-slate-600 hover:bg-[#1a2335]"
+                        ? "border-accent bg-accent-soft/40 shadow-xs"
+                        : "border-line bg-surface hover:bg-panel text-ink"
                     )}
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="text-base">{info.emoji}</span>
-                      <span className="text-[10px] font-mono text-slate-400">
+                      <Icon size={14} className={isSelected ? "text-accent" : "text-muted"} />
+                      <span className="text-[10px] font-mono text-muted">
                         {(COMPONENT_CATALOG[k]?.mass * 1000).toFixed(0)}g
                       </span>
                     </div>
-                    <span className="mt-1 font-bold text-xs text-white">
+                    <span className="mt-1 font-semibold text-xs text-ink">
                       {info.label}
                     </span>
-                    <span className="mt-0.5 line-clamp-2 text-[10px] text-slate-400 leading-tight">
+                    <span className="mt-0.5 line-clamp-2 text-[10px] text-muted leading-snug">
                       {info.desc}
                     </span>
                   </button>
@@ -240,99 +232,138 @@ export default function AddComponentModal() {
             </div>
           </div>
 
-          {/* Placement Settings */}
-          <div className="rounded-xl border border-[#21262d] bg-[#141b28] p-4 space-y-3">
-            <span className="block font-bold uppercase tracking-wider text-cyan-400 text-[10px]">
-              2. Where to Attach It
+          {/* Member & Location */}
+          <div className="grid grid-cols-2 gap-3 rounded-md border border-line bg-panel p-3">
+            <div>
+              <label className="mb-1 block font-semibold text-ink text-[11px]">
+                Attach to Member
+              </label>
+              <select
+                value={memberId}
+                onChange={(e) => setMemberId(e.target.value)}
+                className="w-full text-xs"
+              >
+                {design.members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    Member {m.id} ({m.material})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block font-semibold text-ink text-[11px]">
+                Position on Span: {(s * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min={0.05}
+                max={0.95}
+                step={0.01}
+                value={s}
+                onChange={(e) => setS(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-[10px] text-muted font-mono mt-0.5">
+                <span>Root (0%)</span>
+                <span>Mid</span>
+                <span>Tip (100%)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Mount Isolator */}
+          <div className="rounded-md border border-line bg-panel p-3 space-y-2.5">
+            <span className="block font-semibold uppercase tracking-wider text-muted text-[10px]">
+              2. Mount Isolator
             </span>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-slate-300 font-semibold text-[11px]">
-                  Attach to Arm / Member
-                </label>
+                <label className="mb-1 block text-ink text-[11px]">Preset</label>
                 <select
-                  value={memberId}
-                  onChange={(e) => setMemberId(e.target.value)}
-                  className="w-full rounded-lg border border-[#30363d] bg-[#0d131f] px-2.5 py-1.5 text-xs text-white"
+                  value={mountPreset}
+                  onChange={(e) => handleMountPresetChange(e.target.value as MountPreset)}
+                  className="w-full text-xs"
                 >
-                  {design.members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      Arm {m.id} ({m.material === "cfrp" ? "Carbon Fiber" : m.material})
+                  {Object.values(MOUNT_PRESETS).map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.label}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-slate-300 font-semibold text-[11px]">
-                    Position: {(s * 100).toFixed(0)}%
-                  </label>
-                  <span className="text-[10px] text-cyan-400">
-                    {s < 0.35 ? "Near Center" : s > 0.65 ? "Near Tip" : "Middle"}
-                  </span>
-                </div>
+                <label className="mb-1 block text-ink text-[11px]">Mass (kg)</label>
                 <input
-                  type="range"
-                  min={0.02}
-                  max={0.98}
+                  type="number"
                   step={0.01}
-                  value={s}
-                  onChange={(e) => setS(Number(e.target.value))}
-                  className="w-full accent-cyan-400 cursor-pointer"
+                  value={mass}
+                  onChange={(e) => setMass(Number(e.target.value))}
+                  className="w-full font-mono text-xs"
                 />
-                <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
-                  <span>Center</span>
-                  <span>Middle</span>
-                  <span>Tip</span>
-                </div>
               </div>
             </div>
-          </div>
 
-          {/* Cushion / Shock Absorber Settings */}
-          <div className="rounded-xl border border-[#21262d] bg-[#141b28] p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-bold uppercase tracking-wider text-cyan-400 text-[10px]">
-                3. Shock Absorber Cushion Pad
-              </span>
-              <span className="text-[10px] text-slate-400">Protects from shaking</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-ink text-[11px]">Stiffness kv (N/m)</label>
+                <input
+                  type="number"
+                  step={1000}
+                  value={kv}
+                  onChange={(e) => setKv(Number(e.target.value))}
+                  className="w-full font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-ink text-[11px]">Damping Ratio (ζ)</label>
+                <input
+                  type="number"
+                  step={0.01}
+                  min={0.01}
+                  max={0.5}
+                  value={zeta}
+                  onChange={(e) => setZeta(Number(e.target.value))}
+                  className="w-full font-mono text-xs"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="mb-1 block text-slate-300 font-semibold text-[11px]">
-                Cushion Type
-              </label>
-              <select
-                value={mountPreset}
-                onChange={(e) => handleMountPresetChange(e.target.value as MountPreset)}
-                className="w-full rounded-lg border border-[#30363d] bg-[#0d131f] px-2.5 py-1.5 text-xs text-white"
-              >
-                {Object.values(MOUNT_PRESETS).map((p) => (
-                  <option key={p.key} value={p.key}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {kind !== "motor" && kind !== "fan" && (
+              <div>
+                <label className="mb-1 block text-ink text-[11px]">
+                  Acceleration Limit (g RMS)
+                </label>
+                <input
+                  type="number"
+                  step={0.1}
+                  value={limitG}
+                  onChange={(e) => setLimitG(Number(e.target.value))}
+                  className="w-full font-mono text-xs"
+                />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-[#21262d] bg-[#0c1017] px-6 py-3.5">
+        <div className="flex items-center justify-end gap-2 border-t border-line bg-panel/50 px-5 py-2.5">
           <button
+            type="button"
             onClick={() => setUi({ addComponentModalOpen: false })}
-            className="rounded-lg border border-slate-700 bg-transparent px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 transition-colors"
+            className="btn btn-outline h-8 px-3 text-xs"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleAdd}
-            className="flex items-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-700/30 transition-all"
+            className="btn btn-primary h-8 px-4 text-xs font-semibold shadow-xs"
           >
-            <Plus size={15} />
-            <span>Add Part &amp; Test Shaking 🚀</span>
+            Add Component
           </button>
         </div>
       </div>

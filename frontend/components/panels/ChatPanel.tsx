@@ -1,31 +1,23 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2, Sparkles, CheckCircle2 } from "lucide-react";
+import { Send, Bot, User, Loader2, Sparkles, ChevronDown, ChevronRight, Check } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { agentChat, analyze, optimize } from "@/lib/api/client";
-import type { AgentMode, AgentOp } from "@/lib/types/contract";
 import clsx from "clsx";
 
 const QUICK_PROMPTS = [
-  "Why is my camera shaking so much?",
-  "Auto-fix the shaking for me",
-  "Delete the camera",
-  "Make the arms carbon fiber",
+  "Why is camera shaking?",
+  "How do I fix the resonance?",
+  "Soften camera mounts",
 ];
-
-const MODE_LABELS: Record<AgentMode, string> = {
-  build: "Build for me",
-  continue: "Continue",
-  fix: "Fix",
-  explain: "Explain",
-};
 
 export default function ChatPanel() {
   const design = useStore((s) => s.design);
   const analysis = useStore((s) => s.analysis);
   const chatMessages = useStore((s) => s.chatMessages);
-  const ui = useStore((s) => s.ui);
+  const isChatting = useStore((s) => s.ui.isChatting);
+  const agentMode = useStore((s) => s.ui.agentMode);
   const setUi = useStore((s) => s.setUi);
   const addChatMessage = useStore((s) => s.addChatMessage);
   const setDesign = useStore((s) => s.setDesign);
@@ -35,32 +27,26 @@ export default function ChatPanel() {
   const setActiveCandidate = useStore((s) => s.setActiveCandidate);
 
   const [input, setInput] = useState("");
-  const [lastOps, setLastOps] = useState<AgentOp[]>([]);
+  const [lastDescriptions, setLastDescriptions] = useState<string[]>([]);
+  const [lastSource, setLastSource] = useState<string | null>(null);
+  const [changesOpen, setChangesOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
-
-  // Auto-select agent mode based on context
-  useEffect(() => {
-    if (!design) setUi({ agentMode: "build" });
-    else if (analysis?.findings.some((f) => f.severity === "critical"))
-      setUi({ agentMode: "fix" });
-    else setUi({ agentMode: "continue" });
-  }, [design, analysis, setUi]);
+  }, [chatMessages, isChatting]);
 
   const send = async (text: string) => {
-    if (!text.trim() || ui.isChatting) return;
+    if (!text.trim() || isChatting) return;
     const userMsg = { role: "user" as const, content: text.trim() };
     addChatMessage(userMsg);
     setInput("");
     setUi({ isChatting: true, error: null });
 
     try {
-      const fallbackDesign = design ?? {
+      const activeDesign = design ?? {
         name: "Custom Structure",
-        plane: "xy",
+        plane: "xy" as const,
         nodes: [
           { id: "n1", x: -0.15, y: 0.0 },
           { id: "n2", x: 0.0, y: 0.0 },
@@ -71,18 +57,18 @@ export default function ChatPanel() {
             id: "m1",
             n1: "n1",
             n2: "n2",
-            material: "aluminium_6061",
-            section: { type: "rect", w: 0.016, h: 0.004 },
+            material: "cfrp" as const,
+            section: { type: "rect" as const, w: 0.016, h: 0.004 },
           },
           {
             id: "m2",
             n1: "n2",
             n2: "n3",
-            material: "aluminium_6061",
-            section: { type: "rect", w: 0.016, h: 0.004 },
+            material: "cfrp" as const,
+            section: { type: "rect" as const, w: 0.016, h: 0.004 },
           },
         ],
-        supports: [{ node: "n2", type: "spring", kx: 2000, ky: 2000, kr: 0 }],
+        supports: [{ node: "n2", type: "spring" as const, kx: 2000, ky: 2000, kr: 0 }],
         components: [],
         analysis: {
           rpm_min: 500,
@@ -94,16 +80,23 @@ export default function ChatPanel() {
       };
 
       const res = await agentChat({
-        mode: ui.agentMode,
-        design: fallbackDesign,
+        mode: agentMode,
+        design: activeDesign,
         analysis: analysis ?? undefined,
         messages: [...chatMessages, userMsg],
       });
 
       addChatMessage({ role: "assistant", content: res.assistant_message });
+      setLastSource(res.source ?? null);
 
-      if (res.ops && res.ops.length > 0) {
-        setLastOps(res.ops);
+      const descriptions =
+        res.op_descriptions && res.op_descriptions.length > 0
+          ? res.op_descriptions
+          : res.ops?.map((op) => `${op.op} (${JSON.stringify(op.args)})`) ?? [];
+
+      if (descriptions.length > 0) {
+        setLastDescriptions(descriptions);
+        setChangesOpen(true);
       }
 
       if (res.design) {
@@ -125,7 +118,7 @@ export default function ChatPanel() {
           const opt = await optimize(res.design);
           setOptimizeResult(opt);
           if (opt.candidates.length > 0) {
-            setActiveCandidate(opt.candidates[opt.best_index]);
+            setActiveCandidate(opt.candidates[opt.best_index] ?? opt.candidates[0]);
             setUi({ viewMode: "compare" });
           }
         } finally {
@@ -133,7 +126,7 @@ export default function ChatPanel() {
         }
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Something went wrong";
+      const msg = e instanceof Error ? e.message : "Request failed";
       addChatMessage({
         role: "assistant",
         content: `Error: ${msg}`,
@@ -144,120 +137,120 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#0b0f15]">
-      {/* Header with Mode Selector */}
-      <div className="flex items-center justify-between border-b border-[#21262d] px-3 py-2">
-        <div className="flex items-center gap-2">
-          <Sparkles size={14} className="text-cyan-400" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8b949e]">
-            ResonAI Copilot
-          </span>
-        </div>
-        <div className="flex gap-1">
-          {(Object.keys(MODE_LABELS) as AgentMode[]).map((m) => (
-            <button
-              key={m}
-              className={clsx(
-                "rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors",
-                ui.agentMode === m
-                  ? "bg-blue-500/20 text-blue-400"
-                  : "text-[#6e7681] hover:text-[#8b949e]"
-              )}
-              onClick={() => setUi({ agentMode: m })}
-            >
-              {MODE_LABELS[m]}
-            </button>
-          ))}
-        </div>
-      </div>
-
+    <div className="flex h-full w-full flex-col bg-surface">
       {/* Messages Scroll Area */}
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
-        {chatMessages.length === 0 && (
-          <div className="space-y-3">
-            <p className="text-xs text-[#8b949e] leading-relaxed">
-              Describe a structure or request modifications. The AI copilot translates your requests into validated line-body operations and physics checks.
+        {chatMessages.length === 0 ? (
+          <div className="space-y-3 py-2">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-soft text-accent">
+                <Sparkles size={14} />
+              </div>
+              <span className="text-xs font-semibold text-ink">Engineering Copilot</span>
+            </div>
+            <p className="text-xs text-muted leading-relaxed">
+              Ask questions about resonance findings or request model changes. The copilot executes validated structural modifications.
             </p>
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#6e7681]">
-                Quick Starters:
-              </span>
-              {QUICK_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  className="rounded-md border border-[#30363d] bg-[#161b22] px-2.5 py-1.5 text-left text-[11px] text-[#cbd5e1] transition-colors hover:border-cyan-500/50 hover:bg-[#1f2937]"
-                  onClick={() => send(p)}
-                >
-                  {p}
-                </button>
-              ))}
+
+            {/* 3 Quick-Prompt Chips */}
+            <div className="space-y-1.5 pt-1">
+              <div className="text-[11px] font-semibold text-ink-2 uppercase tracking-wider">
+                Quick Prompts:
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {QUICK_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => send(prompt)}
+                    className="rounded border border-line bg-panel px-2.5 py-1.5 text-left text-xs text-ink-2 transition-colors hover:border-accent-line hover:bg-accent-soft hover:text-accent font-medium"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+        ) : (
+          chatMessages.map((m, i) => (
+            <div
+              key={i}
+              className={clsx(
+                "flex gap-2 items-start",
+                m.role === "user" ? "flex-row-reverse" : ""
+              )}
+            >
+              <div
+                className={clsx(
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-full mt-0.5 text-xs font-semibold",
+                  m.role === "user"
+                    ? "bg-accent-soft text-accent"
+                    : "bg-panel text-ink-2 border border-line"
+                )}
+              >
+                {m.role === "user" ? <User size={12} /> : <Bot size={12} />}
+              </div>
+              <div
+                className={clsx(
+                  "max-w-[85%] rounded-md px-3 py-2 text-xs leading-relaxed shadow-2xs",
+                  m.role === "user"
+                    ? "chat-user"
+                    : "chat-assistant"
+                )}
+              >
+                {m.content}
+              </div>
+            </div>
+          ))
         )}
 
-        {chatMessages.map((m, i) => (
-          <div
-            key={i}
-            className={clsx(
-              "flex gap-2 animate-fade-in",
-              m.role === "user" ? "flex-row-reverse" : ""
+        {/* Changes Made Collapsible List */}
+        {lastDescriptions.length > 0 && (
+          <div className="rounded-md border border-line bg-panel/60 overflow-hidden text-xs">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between p-2 font-medium text-ink-2 hover:bg-panel transition-colors"
+              onClick={() => setChangesOpen(!changesOpen)}
+            >
+              <div className="flex items-center gap-1.5">
+                {changesOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                <Check size={13} className="text-ok stroke-[2.5]" />
+                <span className="font-semibold text-ink">Changes made ({lastDescriptions.length})</span>
+              </div>
+            </button>
+            {changesOpen && (
+              <div className="p-2 pt-0 space-y-1 border-t border-line-subtle bg-surface">
+                {lastDescriptions.map((desc, idx) => (
+                  <div key={idx} className="font-mono text-[11px] text-ink-2 flex items-center gap-1.5">
+                    <span className="text-ok">›</span>
+                    <span>{desc}</span>
+                  </div>
+                ))}
+              </div>
             )}
-          >
-            <div
-              className={clsx(
-                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                m.role === "user" ? "bg-blue-500/20" : "bg-[#21262d]"
-              )}
-            >
-              {m.role === "user" ? (
-                <User size={12} className="text-blue-400" />
-              ) : (
-                <Bot size={12} className="text-cyan-400" />
-              )}
-            </div>
-            <div
-              className={clsx(
-                "max-w-[85%] rounded-lg px-3 py-2 text-[12px] leading-relaxed",
-                m.role === "user"
-                  ? "chat-user text-[#e6edf3]"
-                  : "chat-assistant text-[#c9d1d9]"
-              )}
-            >
-              {m.content}
-            </div>
-          </div>
-        ))}
-
-        {/* Collapsible Changes Executed Strip */}
-        {lastOps.length > 0 && (
-          <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-2.5 text-[11px]">
-            <div className="flex items-center gap-1.5 font-semibold text-emerald-400 mb-1">
-              <CheckCircle2 size={13} />
-              <span>Operations Executed:</span>
-            </div>
-            <div className="space-y-1 font-mono text-[10px] text-[#cbd5e1]">
-              {lastOps.map((op, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <span className="text-emerald-500">›</span>
-                  <span>{op.op}</span>
-                  <span className="text-[#6e7681]">({JSON.stringify(op.args)})</span>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
-        {ui.isChatting && (
-          <div className="flex items-center gap-2 text-xs text-[#8b949e]">
-            <Loader2 size={13} className="animate-spin text-cyan-400" />
-            Generating design operations & verifying physics…
+        {/* Offline Fallback Badge */}
+        {lastSource === "fallback" && (
+          <div className="flex items-center justify-center pt-1">
+            <span className="rounded bg-panel border border-line-subtle px-2 py-0.5 text-[10px] text-muted font-mono">
+              AI unavailable, offline rules used
+            </span>
+          </div>
+        )}
+
+        {isChatting && (
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <Loader2 size={13} className="animate-spin text-accent" />
+            <span>Analyzing structure & verifying operations...</span>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-[#21262d] p-2.5">
+      {/* Input Fixed at Bottom */}
+      <div className="border-t border-line p-2.5 bg-surface">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -269,14 +262,16 @@ export default function ChatPanel() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question or say 'delete camera'…"
-            className="flex-1 text-[13px]"
-            disabled={ui.isChatting}
+            placeholder="Ask question or describe change..."
+            className="flex-1 text-xs"
+            disabled={isChatting}
           />
           <button
             type="submit"
-            className="btn btn-primary px-3"
-            disabled={!input.trim() || ui.isChatting}
+            className="btn btn-primary h-8 px-3 text-xs"
+            disabled={!input.trim() || isChatting}
+            title="Send request"
+            aria-label="Send"
           >
             <Send size={13} />
           </button>

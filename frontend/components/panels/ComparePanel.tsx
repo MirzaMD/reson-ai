@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store/useStore";
 import type { MetricsBlock } from "@/lib/types/contract";
-import { ArrowRight, Check, Sparkles, TrendingDown, Weight, Activity } from "lucide-react";
+import { ArrowRight, Check, Activity, TrendingDown, Layers } from "lucide-react";
 import clsx from "clsx";
 
 export default function ComparePanel() {
@@ -14,8 +14,8 @@ export default function ComparePanel() {
 
   if (!optimizeResult || optimizeResult.candidates.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-xs text-[#8b949e]">
-        Run Auto-Fix in the top bar to generate smoother designs!
+      <div className="flex h-full items-center justify-center text-xs text-muted p-3">
+        Run Auto-fix in the top bar to generate optimized candidates.
       </div>
     );
   }
@@ -40,160 +40,120 @@ export default function ComparePanel() {
     return 0.15;
   };
 
-  const getMass = (m?: MetricsBlock): number => {
-    if (!m) return 0.28;
-    if (typeof m.mass_kg === "number") return m.mass_kg;
-    if (typeof m.mass_added_kg === "number") return 0.28 + m.mass_added_kg;
-    return 0.28;
-  };
+  const camBefore = getCameraPeak(cand.metrics_before);
+  const camAfter = getCameraPeak(cand.metrics_after);
+  const reduction = camBefore > 0 ? ((1 - camAfter / camBefore) * 100).toFixed(1) : "0.0";
+  const stressBefore = getStressRatio(cand.metrics_before);
+  const stressAfter = getStressRatio(cand.metrics_after);
 
   return (
-    <div className="flex flex-col gap-3 p-3.5 text-xs">
-      {/* Candidate Switcher Bar */}
+    <div className="flex flex-col gap-2 p-3 text-xs bg-surface border-t border-line">
+      {/* Top Row: Candidates Selection + Solve Time */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-            <Sparkles size={12} />
-          </div>
-          <span className="font-bold uppercase tracking-wider text-white text-[11px]">
-            Auto-Fix Solutions:
+          <span className="font-semibold text-xs text-ink uppercase tracking-wider text-[11px]">
+            Candidate:
           </span>
           <div className="flex gap-1.5">
             {optimizeResult.candidates.map((c) => (
               <button
                 key={c.rank}
+                type="button"
                 className={clsx(
-                  "rounded-lg border px-3 py-1 text-xs font-bold transition-all",
+                  "rounded px-2.5 py-1 text-xs font-medium transition-colors font-mono",
                   cand.rank === c.rank
-                    ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-300 shadow-sm"
-                    : "border-[#30363d] bg-[#161b22] text-[#8b949e] hover:border-[#484f58] hover:text-[#e6edf3]"
+                    ? "bg-accent text-white font-semibold shadow-2xs"
+                    : "bg-panel text-ink-2 hover:bg-line/40 border border-line"
                 )}
                 onClick={() => setActiveCandidate(c)}
               >
-                Option #{c.rank} (−{c.reduction_pct.toFixed(0)}% Shaking)
+                #{c.rank} (−{c.reduction_pct.toFixed(0)}% g RMS)
               </button>
             ))}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 font-mono text-[11px] text-emerald-400 font-semibold">
-          <span>⚡ Computed in {optimizeResult.solve_ms.toFixed(1)} ms</span>
+        <span className="font-mono text-[11px] text-muted">
+          Solver converged in {optimizeResult.solve_ms.toFixed(0)} ms
+        </span>
+      </div>
+
+      {/* Slim Summary Strip: Metrics & Changes & Action Buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-panel/40 px-3 py-2">
+        {/* Metrics comparison */}
+        <div className="flex items-center gap-6">
+          {/* Camera Acceleration */}
+          <div className="flex items-center gap-2 font-mono">
+            <div className="flex items-center gap-1 text-muted text-[11px]">
+              <Activity size={13} className="text-accent" />
+              <span>Camera Accel:</span>
+            </div>
+            <span className="text-danger font-medium line-through">
+              {camBefore.toFixed(2)} g RMS
+            </span>
+            <ArrowRight size={12} className="text-muted" />
+            <span className="text-ok font-bold">
+              {camAfter.toFixed(2)} g RMS
+            </span>
+            <span className="rounded bg-ok-soft px-1.5 py-0.2 text-[10px] font-bold text-ok font-mono">
+              −{reduction}%
+            </span>
+          </div>
+
+          {/* Stress Ratio */}
+          <div className="hidden sm:flex items-center gap-2 font-mono">
+            <div className="flex items-center gap-1 text-muted text-[11px]">
+              <TrendingDown size={13} className="text-accent" />
+              <span>Max Stress:</span>
+            </div>
+            <span className="text-muted font-medium">
+              {(stressBefore * 100).toFixed(0)}%
+            </span>
+            <ArrowRight size={12} className="text-muted" />
+            <span className="text-ink font-semibold">
+              {(stressAfter * 100).toFixed(0)}%
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Metrics Comparison Strip */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <MetricCard
-          label="Shaking Force (Camera)"
-          icon={Activity}
-          before={getCameraPeak(cand.metrics_before)}
-          after={getCameraPeak(cand.metrics_after)}
-          unit=" g"
-          sub="Lower is much better! (<0.5g is safe)"
-        />
-        <MetricCard
-          label="Arm Bending Stress"
-          icon={TrendingDown}
-          before={getStressRatio(cand.metrics_before)}
-          after={getStressRatio(cand.metrics_after)}
-          unit=""
-          sub="Strength ratio (<0.50 is safe)"
-        />
-        <MetricCard
-          label="Total Drone Weight"
-          icon={Weight}
-          before={getMass(cand.metrics_before)}
-          after={getMass(cand.metrics_after)}
-          unit=" kg"
-          sub="Total payload & frame weight"
-        />
-      </div>
-
-      {/* Changes Summary & Actions */}
-      <div className="flex items-center justify-between gap-4 rounded-xl border border-[#21262d] bg-[#111820] px-4 py-3">
-        <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-cyan-400">
-            What was tuned to stop shaking:
-          </p>
-          <div className="flex flex-wrap gap-2">
+        {/* Changes Made List */}
+        <div className="hidden lg:flex items-center gap-1.5 flex-1 max-w-sm truncate">
+          <Layers size={13} className="text-muted shrink-0" />
+          <span className="text-[11px] text-muted shrink-0">Tuned:</span>
+          <div className="flex items-center gap-1 truncate">
             {cand.changes.map((ch, i) => (
               <span
                 key={i}
-                className="rounded-lg bg-[#161b22] px-2.5 py-1 font-mono text-[11px] text-slate-200 border border-[#30363d]"
+                className="rounded bg-surface px-1.5 py-0.5 font-mono text-[10px] text-ink border border-line truncate"
               >
-                ✨ {ch.label}
+                {ch.label}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Buttons */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
-            className="rounded-lg border border-[#30363d] bg-transparent hover:bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors"
+            type="button"
+            className="btn btn-outline h-7 px-2.5 text-xs text-ink-2"
             onClick={() => setUi({ viewMode: "single" })}
           >
             Exit Compare
           </button>
           <button
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold text-white shadow-lg shadow-emerald-700/30 transition-all"
+            type="button"
+            className="btn btn-primary h-7 px-3 text-xs shadow-xs"
             onClick={() => {
               applyCandidate(cand);
               setUi({ viewMode: "single" });
             }}
           >
-            <Check size={14} />
-            <span>Keep This Fix ✅</span>
+            <Check size={13} />
+            <span>Apply Fix</span>
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function MetricCard({
-  label,
-  icon: Icon,
-  before,
-  after,
-  unit,
-  sub,
-}: {
-  label: string;
-  icon: React.ElementType;
-  before: number;
-  after: number;
-  unit: string;
-  sub?: string;
-}) {
-  const reduction = before > 0 ? ((1 - after / before) * 100).toFixed(0) : "0";
-
-  return (
-    <div className="flex flex-col justify-between rounded-xl border border-[#30363d] bg-[#161b22] p-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-200">
-          <Icon size={13} className="text-cyan-400" />
-          <span>{label}</span>
-        </div>
-        {Number(reduction) > 0 && (
-          <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-300">
-            −{reduction}%
-          </span>
-        )}
-      </div>
-
-      <div className="mt-2 flex items-center gap-2 font-mono text-xs">
-        <span className="text-red-400 font-semibold line-through">
-          {before.toFixed(2)}
-          {unit}
-        </span>
-        <ArrowRight size={12} className="text-[#6e7681]" />
-        <span className="text-emerald-400 font-bold text-sm">
-          {after.toFixed(2)}
-          {unit}
-        </span>
-      </div>
-
-      {sub && <p className="mt-1 text-[10px] text-[#6e7681]">{sub}</p>}
     </div>
   );
 }

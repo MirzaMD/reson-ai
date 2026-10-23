@@ -114,16 +114,18 @@ function CampbellPlotComponent() {
       margin: { l: 55, r: 25, t: 15, b: 40 },
       paper_bgcolor: "transparent",
       plot_bgcolor: "transparent",
-      font: { family: "Inter, sans-serif", size: 11, color: "#8b949e" },
+      font: { family: "var(--font-plex-sans), sans-serif", size: 11, color: "#59636e" },
       xaxis: {
         title: "Shaft Rotation Speed (RPM)",
-        gridcolor: "#21262d",
-        color: "#8b949e",
+        gridcolor: "#e6ebf1",
+        zerolinecolor: "#d0d7de",
+        color: "#59636e",
       },
       yaxis: {
         title: "Frequency (Hz)",
-        gridcolor: "#21262d",
-        color: "#8b949e",
+        gridcolor: "#e6ebf1",
+        zerolinecolor: "#d0d7de",
+        color: "#59636e",
       },
       legend: { orientation: "h" as const, y: 1.15, font: { size: 10 } },
       shapes: [

@@ -69,16 +69,16 @@ function HeatmapPlotComponent() {
         margin: { l: 55, r: 65, t: 15, b: 40 },
         paper_bgcolor: "transparent",
         plot_bgcolor: "transparent",
-        font: { family: "Inter, sans-serif", size: 11, color: "#8b949e" },
+        font: { family: "var(--font-plex-sans), sans-serif", size: 11, color: "#59636e" },
         xaxis: {
-          title: "Rotation Speed (RPM) — Click to Seek",
-          color: "#8b949e",
-          gridcolor: "#21262d",
+          title: "Rotation Speed (RPM)",
+          color: "#59636e",
+          gridcolor: "#e6ebf1",
         },
         yaxis: {
-          title: "Mesh Node Index (Position)",
-          color: "#8b949e",
-          gridcolor: "#21262d",
+          title: "Mesh Node Index",
+          color: "#59636e",
+          gridcolor: "#e6ebf1",
         },
       }}
       config={{ displayModeBar: false, responsive: true }}
