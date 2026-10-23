@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import Propeller from "./Propeller";
 import type { ComponentKind, ComponentStatus } from "@/lib/types/contract";
 
@@ -203,7 +203,7 @@ function GenericMass({ mass = 0.2 }: { mass?: number }) {
   );
 }
 
-export default function ComponentModel({
+function ComponentModelInternal({
   kind,
   status = "ok",
   rpm = 0,
@@ -243,3 +243,5 @@ export default function ComponentModel({
     </group>
   );
 }
+
+export default memo(ComponentModelInternal);

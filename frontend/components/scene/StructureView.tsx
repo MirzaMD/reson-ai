@@ -1,20 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
-import { Edges } from "@react-three/drei";
+import { useMemo, useRef, useEffect } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import type { Design, AnalysisResult, ResponseAt } from "@/lib/types/contract";
 import { toWorld } from "./mapping";
 import { jet } from "./colormap";
 import ComponentModel from "./ComponentModel";
 import MountSpring from "./MountSpring";
+import { animClock } from "./animClock";
 
 interface Props {
   design: Design;
   analysis: AnalysisResult | null;
   responseAt: ResponseAt | null;
   rpm: number;
-  time: number;
   exaggeration: number;
   showMesh: boolean;
   showGhost: boolean;
@@ -23,11 +23,28 @@ interface Props {
   overrideMaxAmp?: number;
   onSelectMember?: (id: string) => void;
   onSelectComponent?: (id: string) => void;
-
-  // Prevent duplicated components in symmetric scene rendering.
   renderComponents?: boolean;
 }
 
+// Reusable scratch objects to eliminate per-frame allocations
+const _tempVecA = new THREE.Vector3();
+const _tempVecB = new THREE.Vector3();
+const _tempMid = new THREE.Vector3();
+const _tempDir = new THREE.Vector3();
+const _tempQuat = new THREE.Quaternion();
+const _tempScale = new THREE.Vector3();
+const _tempMat4 = new THREE.Matrix4();
+const _tempColor = new THREE.Color();
+const _yAxis = new THREE.Vector3(0, 1, 0);
+
+const boxGeom = new THREE.BoxGeometry(1, 1, 1);
+const ghostGeom = new THREE.BoxGeometry(1, 1, 1);
+const ghostMaterial = new THREE.MeshBasicMaterial({
+  color: "#64748b",
+  wireframe: true,
+  transparent: true,
+  opacity: 0.25,
+});
 
 /** Build element segments from consecutive mesh nodes per member */
 function buildElements(
@@ -52,76 +69,11 @@ function buildElements(
   return elems;
 }
 
-function BeamElement({
-  posA,
-  posB,
-  color,
-  thickness = 0.0035,
-  ghost = false,
-  selected = false,
-  onClick,
-}: {
-  posA: THREE.Vector3;
-  posB: THREE.Vector3;
-  color: string;
-  thickness?: number;
-  ghost?: boolean;
-  selected?: boolean;
-  onClick?: () => void;
-}) {
-  const mid = useMemo(() => {
-    return new THREE.Vector3().addVectors(posA, posB).multiplyScalar(0.5);
-  }, [posA, posB]);
-
-  const { length, quat } = useMemo(() => {
-    const dir = new THREE.Vector3().subVectors(posB, posA);
-    const len = dir.length();
-    const q = new THREE.Quaternion();
-    if (len > 1e-9) {
-      dir.normalize();
-      q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-    }
-    return { length: len, quat: q };
-  }, [posA, posB]);
-
-  return (
-    <mesh
-      position={mid}
-      quaternion={quat}
-      onClick={(e) => {
-        if (onClick && !ghost) {
-          e.stopPropagation();
-          onClick();
-        }
-      }}
-    >
-      <boxGeometry args={[thickness, length, thickness]} />
-      <meshStandardMaterial
-        color={selected ? "#38bdf8" : color}
-        transparent={ghost}
-        opacity={ghost ? 0.2 : 1}
-        metalness={0.3}
-        roughness={0.5}
-        wireframe={ghost}
-        emissive={selected ? "#0284c7" : "#000000"}
-        emissiveIntensity={selected ? 0.35 : 0}
-      />
-      {!ghost && (
-        <Edges
-          threshold={15}
-          color={selected ? "#38bdf8" : "#0f172a"}
-        />
-      )}
-    </mesh>
-  );
-}
-
 export default function StructureView({
   design,
   analysis,
   responseAt,
   rpm,
-  time,
   exaggeration,
   showMesh,
   showGhost,
@@ -134,6 +86,14 @@ export default function StructureView({
 }: Props) {
   const meshNodes = useMemo(() => analysis?.mesh_nodes ?? [], [analysis]);
   const elements = useMemo(() => buildElements(meshNodes), [meshNodes]);
+
+  const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
+  const ghostInstancedMeshRef = useRef<THREE.InstancedMesh>(null);
+  const outlineLinesRef = useRef<THREE.LineSegments>(null);
+
+  // Component bobbing and mount spring scaling refs
+  const compRefs = useRef<(THREE.Group | null)[]>([]);
+  const springRefs = useRef<(THREE.Group | null)[]>([]);
 
   const statusMap = useMemo(() => {
     const m = new Map<string, "ok" | "warning" | "critical">();
@@ -156,177 +116,297 @@ export default function StructureView({
     const rpms = analysis.sweep.rpm;
     let best = 0;
     let bestDist = Infinity;
-    rpms.forEach((r, i) => {
-      const d = Math.abs(r - rpm);
+    for (let i = 0; i < rpms.length; i++) {
+      const d = Math.abs(rpms[i] - rpm);
       if (d < bestDist) {
         bestDist = d;
         best = i;
       }
-    });
+    }
     return best;
   }, [analysis, rpm]);
 
-  // Node positions: either animated harmonic response OR animated mode shape
-  const nodePositions = useMemo(() => {
-    if (meshNodes.length === 0) {
-      return design.nodes.map((n) => new THREE.Vector3(...toWorld(n.x, n.y)));
-    }
-
-    // Check if mode shape visualization is active
-    if (selectedMode != null && analysis?.modes) {
-      const mode = analysis.modes.find((m) => m.i === selectedMode);
-      if (mode?.shape) {
-        const gain = exaggeration * 0.0008;
-        const wave = Math.cos(time);
-        return meshNodes.map((n, i) => {
-          const uy = (mode.shape[i]?.[1] ?? 0) * wave * gain;
-          return new THREE.Vector3(n.x, n.y + uy, 0);
-        });
-      }
-    }
-
-    // Standard harmonic sweep deformation
-    return meshNodes.map((n, i) => {
-      let ux = 0;
-      let uy = 0;
-      if (responseAt?.nodes?.[i]) {
-        const node = responseAt.nodes[i];
-        const c = Math.cos(time);
-        const s = Math.sin(time);
-        ux = node.ux[0] * c - node.ux[1] * s;
-        uy = node.uy[0] * c - node.uy[1] * s;
-      }
-      const gain = exaggeration * 0.001;
-      return new THREE.Vector3(n.x + gain * ux, n.y + gain * uy, 0);
-    });
-  }, [meshNodes, responseAt, time, exaggeration, design.nodes, selectedMode, analysis]);
-
-  const ghostPositions = useMemo(() => {
+  // Static/undeformed node coordinates
+  const undeformedPositions = useMemo(() => {
     if (meshNodes.length === 0) {
       return design.nodes.map((n) => new THREE.Vector3(...toWorld(n.x, n.y)));
     }
     return meshNodes.map((n) => new THREE.Vector3(n.x, n.y, 0));
   }, [meshNodes, design.nodes]);
 
-  const componentPositions = useMemo(() => {
-    const nodeMap = new Map(design.nodes.map((n) => [n.id, n]));
-    return design.components.map((comp, compIdx) => {
-      const member = design.members.find((m) => m.id === comp.member);
-      if (!member) return { comp, pos: new THREE.Vector3(0, 0, 0), beamY: 0, dir: 1 as 1 | -1 };
+  // Static ghost structure matrices (calculated once per design)
+  useEffect(() => {
+    if (!ghostInstancedMeshRef.current || !elements.length) return;
+    const mesh = ghostInstancedMeshRef.current;
 
-      const n1 = nodeMap.get(member.n1);
-      const n2 = nodeMap.get(member.n2);
-      if (!n1 || !n2) return { comp, pos: new THREE.Vector3(0, 0, 0), beamY: 0, dir: 1 as 1 | -1 };
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      const posA = undeformedPositions[el.a] ?? _tempVecA.set(0, 0, 0);
+      const posB = undeformedPositions[el.b] ?? _tempVecB.set(0, 0, 0);
 
-      const x = n1.x + (n2.x - n1.x) * comp.s;
-      const y = n1.y + (n2.y - n1.y) * comp.s;
-
-      let uy = 0;
-      if (responseAt?.components) {
-        const rc = responseAt.components.find((c) => c.id === comp.id);
-        if (rc) {
-          const c = Math.cos(time);
-          const s = Math.sin(time);
-          uy = rc.uy[0] * c - rc.uy[1] * s;
-        }
+      _tempMid.addVectors(posA, posB).multiplyScalar(0.5);
+      _tempDir.subVectors(posB, posA);
+      const len = _tempDir.length();
+      if (len > 1e-9) {
+        _tempDir.normalize();
+        _tempQuat.setFromUnitVectors(_yAxis, _tempDir);
+      } else {
+        _tempQuat.identity();
       }
-      const gain = exaggeration * 0.001;
-      // Alternating spin direction for quadrotor motors (c1 CW, c2 CCW)
-      const dir: 1 | -1 = compIdx % 2 === 0 ? 1 : -1;
+      _tempScale.set(0.0025, Math.max(1e-4, len), 0.0025);
+      _tempMat4.compose(_tempMid, _tempQuat, _tempScale);
+      mesh.setMatrixAt(i, _tempMat4);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [elements, undeformedPositions]);
 
-      return {
-        comp,
-        pos: new THREE.Vector3(x, y + gain * uy, 0),
-        beamY: y,
-        relDisp: gain * uy,
-        dir,
-      };
-    });
-  }, [design, responseAt, time, exaggeration]);
+  // Contour colors depend only on RPM and amplitude scale, NOT on time!
+  // Recomputed and uploaded to GPU ONLY when rpm, analysis, or selection changes.
+  useEffect(() => {
+    if (!instancedMeshRef.current || !elements.length) return;
+    const mesh = instancedMeshRef.current;
 
-  return (
-    <group>
-      {/* Ghost (undeformed) wireframe overlay */}
-      {showGhost &&
-        elements.map((el, i) => (
-          <BeamElement
-            key={`ghost-${i}`}
-            posA={ghostPositions[el.a] ?? new THREE.Vector3()}
-            posB={ghostPositions[el.b] ?? new THREE.Vector3()}
-            color="#64748b"
-            thickness={0.0025}
-            ghost
-          />
-        ))}
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      const isSelected = selectedId === el.member;
 
-      {/* Deformed structure with FE jet colormap */}
-      {elements.map((el, i) => {
+      if (isSelected) {
+        _tempColor.set("#38bdf8");
+      } else if (!showMesh) {
+        _tempColor.set("#6366f1");
+      } else {
         const amp = analysis?.sweep.node_amp_mm?.[rpmIdx]?.[el.a] ?? 0;
         const t = Math.min(1, Math.max(0, amp / ampMax));
         const [r, g, b] = jet(t);
-        const color = `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`;
-        const isSelected = selectedId === el.member;
+        _tempColor.setRGB(r, g, b);
+      }
+      mesh.setColorAt(i, _tempColor);
+    }
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
+    }
+  }, [elements, analysis, rpmIdx, ampMax, showMesh, selectedId]);
 
-        return (
-          <BeamElement
-            key={`el-${i}`}
-            posA={nodePositions[el.a] ?? new THREE.Vector3()}
-            posB={nodePositions[el.b] ?? new THREE.Vector3()}
-            color={showMesh ? color : "#6366f1"}
-            thickness={0.004}
-            selected={isSelected}
-            onClick={() => el.member && onSelectMember?.(el.member)}
-          />
-        );
-      })}
+  // Outline LineSegments geometry (built once per mesh)
+  const linePositionsBuffer = useMemo(() => {
+    if (!elements.length) return null;
+    return new Float32Array(elements.length * 2 * 3);
+  }, [elements.length]);
 
-      {/* Fallback when no FE mesh yet */}
-      {meshNodes.length === 0 &&
-        design.members.map((m) => {
-          const n1 = design.nodes.find((n) => n.id === m.n1);
-          const n2 = design.nodes.find((n) => n.id === m.n2);
-          if (!n1 || !n2) return null;
-          return (
-            <BeamElement
-              key={m.id}
-              posA={new THREE.Vector3(...toWorld(n1.x, n1.y))}
-              posB={new THREE.Vector3(...toWorld(n2.x, n2.y))}
-              color="#6366f1"
-              thickness={0.005}
-              selected={selectedId === m.id}
-              onClick={() => onSelectMember?.(m.id)}
-            />
-          );
-        })}
+  // Component metadata
+  const componentData = useMemo(() => {
+    const nodeMap = new Map(design.nodes.map((n) => [n.id, n]));
+    return design.components.map((comp, compIdx) => {
+      const member = design.members.find((m) => m.id === comp.member);
+      if (!member) {
+        return { comp, baseX: 0, baseY: 0, baseZ: 0, dir: 1 as 1 | -1, respComp: null };
+      }
+      const n1 = nodeMap.get(member.n1);
+      const n2 = nodeMap.get(member.n2);
+      if (!n1 || !n2) {
+        return { comp, baseX: 0, baseY: 0, baseZ: 0, dir: 1 as 1 | -1, respComp: null };
+      }
+      const x = n1.x + (n2.x - n1.x) * comp.s;
+      const y = n1.y + (n2.y - n1.y) * comp.s;
+      const respComp = responseAt?.components?.find((c) => c.id === comp.id) ?? null;
+      const dir: 1 | -1 = compIdx % 2 === 0 ? 1 : -1;
 
-      {/* Lumped Components & Dynamic Mount Springs */}
-{renderComponents &&
-  componentPositions.map(({ comp, pos, beamY, relDisp, dir }) => (
-        <group
-          key={comp.id}
-          position={[pos.x, 0, pos.z]}
+      return { comp, baseX: x, baseY: y, baseZ: 0, dir, respComp };
+    });
+  }, [design, responseAt]);
+
+  // Selected mode data
+  const modeShapeData = useMemo(() => {
+    if (selectedMode == null || !analysis?.modes) return null;
+    const mode = analysis.modes.find((m) => m.i === selectedMode);
+    return mode?.shape ?? null;
+  }, [analysis, selectedMode]);
+
+  // 60 FPS IMPERATIVE ANIMATION (Zero React Re-renders)
+  useFrame(() => {
+    if (document.hidden) return;
+    const t = animClock.time;
+    const cosT = Math.cos(t);
+    const sinT = Math.sin(t);
+
+    const instancedMesh = instancedMeshRef.current;
+    if (!instancedMesh || !elements.length) return;
+
+    const gain = exaggeration * 0.001;
+    const modeGain = exaggeration * 0.0008;
+    const posAttr = outlineLinesRef.current?.geometry?.attributes?.position;
+    const lineArray = posAttr ? (posAttr.array as Float32Array) : null;
+
+    // 1. Update element transforms
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      const na = meshNodes[el.a];
+      const nb = meshNodes[el.b];
+      if (!na || !nb) continue;
+
+      let uxa = 0, uya = 0, uxb = 0, uyb = 0;
+
+      if (modeShapeData) {
+        uya = (modeShapeData[el.a]?.[1] ?? 0) * cosT * modeGain;
+        uyb = (modeShapeData[el.b]?.[1] ?? 0) * cosT * modeGain;
+      } else if (responseAt?.nodes) {
+        const ra = responseAt.nodes[el.a];
+        if (ra) {
+          uxa = (ra.ux[0] * cosT - ra.ux[1] * sinT) * gain;
+          uya = (ra.uy[0] * cosT - ra.uy[1] * sinT) * gain;
+        }
+        const rb = responseAt.nodes[el.b];
+        if (rb) {
+          uxb = (rb.ux[0] * cosT - rb.ux[1] * sinT) * gain;
+          uyb = (rb.uy[0] * cosT - rb.uy[1] * sinT) * gain;
+        }
+      }
+
+      _tempVecA.set(na.x + uxa, na.y + uya, 0);
+      _tempVecB.set(nb.x + uxb, nb.y + uyb, 0);
+
+      _tempMid.addVectors(_tempVecA, _tempVecB).multiplyScalar(0.5);
+      _tempDir.subVectors(_tempVecB, _tempVecA);
+      const len = _tempDir.length();
+      if (len > 1e-9) {
+        _tempDir.normalize();
+        _tempQuat.setFromUnitVectors(_yAxis, _tempDir);
+      } else {
+        _tempQuat.identity();
+      }
+
+      _tempScale.set(0.004, Math.max(1e-4, len), 0.004);
+      _tempMat4.compose(_tempMid, _tempQuat, _tempScale);
+      instancedMesh.setMatrixAt(i, _tempMat4);
+
+      // Update outline buffer
+      if (lineArray) {
+        const offset = i * 6;
+        lineArray[offset] = _tempVecA.x;
+        lineArray[offset + 1] = _tempVecA.y;
+        lineArray[offset + 2] = _tempVecA.z;
+        lineArray[offset + 3] = _tempVecB.x;
+        lineArray[offset + 4] = _tempVecB.y;
+        lineArray[offset + 5] = _tempVecB.z;
+      }
+    }
+
+    instancedMesh.instanceMatrix.needsUpdate = true;
+
+    if (posAttr) {
+      posAttr.needsUpdate = true;
+    }
+
+    // 2. Update attached components bobbing and mount spring scaling
+    if (renderComponents) {
+      for (let idx = 0; idx < componentData.length; idx++) {
+        const cData = componentData[idx];
+        const compGroup = compRefs.current[idx];
+        const springGroup = springRefs.current[idx];
+
+        let uy = 0;
+        if (cData.respComp) {
+          uy = (cData.respComp.uy[0] * cosT - cData.respComp.uy[1] * sinT) * gain;
+        }
+
+        if (compGroup) {
+          compGroup.position.y = cData.baseY + uy;
+        }
+        if (springGroup) {
+          const restLen = 0.012;
+          const scaleY = Math.max(0.2, (restLen + uy) / restLen);
+          springGroup.scale.set(1, scaleY, 1);
+        }
+      }
+    }
+  });
+
+  return (
+    <group>
+      {/* Ghost (undeformed) wireframe overlay (static, 1 draw call) */}
+      {showGhost && elements.length > 0 && (
+        <instancedMesh
+          ref={ghostInstancedMeshRef}
+          args={[ghostGeom, ghostMaterial, elements.length]}
+          frustumCulled={false}
+        />
+      )}
+
+      {/* Deformed 3D Beam Elements (InstancedMesh: 1 single draw call for all elements) */}
+      {elements.length > 0 && (
+        <instancedMesh
+          ref={instancedMeshRef}
+          args={[boxGeom, undefined, elements.length]}
+          frustumCulled={false}
           onClick={(e) => {
-            e.stopPropagation();
-            onSelectComponent?.(comp.id);
+            if (e.instanceId != null && elements[e.instanceId]?.member) {
+              e.stopPropagation();
+              onSelectMember?.(elements[e.instanceId].member!);
+            }
           }}
         >
-          <MountSpring
-            position={[0, beamY, 0]}
-            restLength={0.012}
-            relDisp={relDisp ?? 0}
-            preset={comp.mount.preset}
+          <meshStandardMaterial
+            metalness={0.4}
+            roughness={0.4}
+            emissive={selectedId ? "#0284c7" : "#000000"}
+            emissiveIntensity={selectedId ? 0.3 : 0}
           />
-          <group position={[0, pos.y, 0]}>
-            <ComponentModel
-              kind={comp.kind}
-              status={statusMap.get(comp.id) ?? "ok"}
-              rpm={comp.kind === "motor" || comp.kind === "fan" ? rpm : 0}
-              dir={dir}
-              selected={selectedId === comp.id}
+        </instancedMesh>
+      )}
+
+      {/* Merged LineSegments Outline (replaces 100 per-element drei <Edges/> calls) */}
+      {showMesh && linePositionsBuffer && (
+        <lineSegments ref={outlineLinesRef}>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              args={[linePositionsBuffer, 3]}
             />
+          </bufferGeometry>
+          <lineBasicMaterial color="#0f172a" transparent opacity={0.6} />
+        </lineSegments>
+      )}
+
+      {/* Lumped Components & Dynamic Mount Springs */}
+      {renderComponents &&
+        componentData.map((cData, idx) => (
+          <group
+            key={cData.comp.id}
+            position={[cData.baseX, 0, cData.baseZ]}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectComponent?.(cData.comp.id);
+            }}
+          >
+            <group
+              ref={(el) => {
+                springRefs.current[idx] = el;
+              }}
+              position={[0, cData.baseY, 0]}
+            >
+              <MountSpring
+                position={[0, 0, 0]}
+                restLength={0.012}
+                preset={cData.comp.mount?.preset}
+              />
+            </group>
+
+            <group
+              ref={(el) => {
+                compRefs.current[idx] = el;
+              }}
+              position={[0, cData.baseY, 0]}
+            >
+              <ComponentModel
+                kind={cData.comp.kind}
+                status={statusMap.get(cData.comp.id) ?? "ok"}
+                rpm={cData.comp.kind === "motor" || cData.comp.kind === "fan" ? rpm : 0}
+                dir={cData.dir}
+                selected={selectedId === cData.comp.id}
+              />
+            </group>
           </group>
-        </group>
-      ))}
+        ))}
     </group>
   );
 }

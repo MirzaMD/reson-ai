@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, memo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { MountPreset } from "@/lib/types/contract";
@@ -23,7 +23,7 @@ interface Props {
   position: [number, number, number];
 }
 
-export default function MountSpring({
+function MountSpringInternal({
   restLength = 0.012,
   relDisp = 0,
   preset = "rubber_medium",
@@ -89,3 +89,5 @@ export default function MountSpring({
     </group>
   );
 }
+
+export default memo(MountSpringInternal);

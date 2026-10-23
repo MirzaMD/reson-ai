@@ -20,6 +20,7 @@ import NodesView from "./NodesView";
 import Colorbar from "./Colorbar";
 import { computeBounds, DRONE_ANGLES, isDroneDesign } from "./mapping";
 import type { Design, AnalysisResult, ResponseAt } from "@/lib/types/contract";
+import { animClock, notifyThrottledClock } from "./animClock";
 import {
   Compass,
   Box,
@@ -42,30 +43,32 @@ interface SceneRootProps {
 
 function AnimationDriver() {
   const animating = useStore((s) => s.ui.animating);
-  const setTime = useStore((s) => s.setTime);
-  const rpm = useStore((s) => s.rpm);
-  const setRpm = useStore((s) => s.setRpm);
   const isRpmSweeping = useStore((s) => s.ui.isRpmSweeping);
-  const design = useStore((s) => s.design);
 
   useFrame((_, dt) => {
-    if (!animating) return;
+    if (!animating || document.hidden) return;
     const clampedDt = Math.min(dt, 0.05);
 
     // Smooth RPM sweep if automated sweep mode is engaged
-    if (isRpmSweeping && design) {
-      const minRpm = design.analysis.rpm_min || 500;
-      const maxRpm = design.analysis.rpm_max || 12000;
-      const sweepSpeed = (maxRpm - minRpm) / 10; // 10 second full sweep
-      let nextRpm = rpm + sweepSpeed * clampedDt;
-      if (nextRpm > maxRpm) nextRpm = minRpm;
-      setRpm(Math.round(nextRpm));
+    if (isRpmSweeping) {
+      const design = useStore.getState().design;
+      if (design) {
+        const minRpm = design.analysis.rpm_min || 500;
+        const maxRpm = design.analysis.rpm_max || 12000;
+        const sweepSpeed = (maxRpm - minRpm) / 10; // 10 second full sweep
+        const currentRpm = useStore.getState().rpm;
+        let nextRpm = currentRpm + sweepSpeed * clampedDt;
+        if (nextRpm > maxRpm) nextRpm = minRpm;
+        useStore.getState().setRpm(Math.round(nextRpm));
+      }
     }
 
-    // Visually pleasing steady phase rotation
-    const visualFreq = Math.min(Math.max(rpm / 120, 2), 7);
-    const nextTime = (useStore.getState().time + visualFreq * clampedDt * Math.PI * 2) % (Math.PI * 2);
-    setTime(nextTime);
+    // Visually pleasing steady phase rotation updated on mutable non-reactive clock
+    const currentRpm = useStore.getState().rpm;
+    const visualFreq = Math.min(Math.max(currentRpm / 120, 2), 7);
+    const nextTime = (animClock.time + visualFreq * clampedDt * Math.PI * 2) % (Math.PI * 2);
+    animClock.time = nextTime;
+    notifyThrottledClock(performance.now(), nextTime);
   });
 
   return null;
@@ -195,11 +198,9 @@ function SceneContent({
   sharedMaxAmp?: number;
 }) {
   const storeDesign = useStore((s) => s.design);
-  const isPerf = usePerfMode();
   const storeAnalysis = useStore((s) => s.analysis);
   const storeResponseAt = useStore((s) => s.responseAt);
   const rpm = useStore((s) => s.rpm);
-  const time = useStore((s) => s.time);
   const exaggeration = useStore((s) => s.ui.exaggeration);
   const showMesh = useStore((s) => s.ui.showMesh);
   const showGhost = useStore((s) => s.ui.showGhost);
@@ -212,26 +213,16 @@ function SceneContent({
   const responseAt = activeResponseAt !== undefined ? activeResponseAt : storeResponseAt;
 
   if (!design) {
-    return (
-      <group>
-        <ambientLight intensity={0.4} />
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[0.08, 0.005, 0.005]} />
-          <meshStandardMaterial color="#334155" wireframe />
-        </mesh>
-      </group>
-    );
+    return null;
   }
 
   const isDrone = isDroneDesign(design.name);
   const angles = isDrone ? DRONE_ANGLES : [0];
   return (
     <>
-      {/* Lighting Rig for High-Contrast CAD Aesthetic */}
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[3, 5, 4]} intensity={1.1} />
-      <directionalLight position={[-3, 2, -3]} intensity={0.45} />
-      <directionalLight position={[0, -3, 0]} intensity={0.2} />
+      {/* High-Performance Lighting Rig: 1 ambient + 1 directional (no shadows) */}
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[3, 5, 4]} intensity={1.2} />
 
       {/* Engineering Ground Grid */}
       <Grid
@@ -252,7 +243,6 @@ function SceneContent({
       analysis={analysis}
       responseAt={responseAt}
       rpm={rpm}
-      time={time}
       exaggeration={exaggeration}
       showMesh={showMesh}
       showGhost={showGhost}
@@ -293,8 +283,8 @@ export default function SceneRoot({
   isCompareSecondary = false,
   sharedMaxAmp,
 }: SceneRootProps) {
-  const storeDesign = useStore((s) => s.design);
   const isPerf = usePerfMode();
+  const storeDesign = useStore((s) => s.design);
   const storeAnalysis = useStore((s) => s.analysis);
   const triggerCameraView = useStore((s) => s.triggerCameraView);
   const probe = useStore((s) => s.probe);
@@ -305,9 +295,11 @@ export default function SceneRoot({
   const setSelection = useStore((s) => s.setSelection);
   const deleteComponent = useStore((s) => s.deleteComponent);
   const rpm = useStore((s) => s.rpm);
+  const animating = useStore((s) => s.ui.animating);
   const setResponseAt = useStore((s) => s.setResponseAt);
   const debouncedRpm = useDebouncedRpm(rpm, 150);
-  const requestGeneration = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const responseCache = useRef(new Map<number, ResponseAt>());
 
   const design = customDesign !== undefined ? customDesign : storeDesign;
   const analysis = customAnalysis !== undefined ? customAnalysis : storeAnalysis;
@@ -324,39 +316,51 @@ export default function SceneRoot({
     }
     ampMax = mx;
   }
+
+  // Clear cache if design changes
+  useEffect(() => {
+    responseCache.current.clear();
+  }, [design]);
+
   useEffect(() => {
     // The secondary comparison scene must not overwrite global response state.
     if (isCompareSecondary || customDesign !== undefined) return;
 
     if (!design || !Number.isFinite(debouncedRpm) || debouncedRpm < 0) {
-      setResponseAt(null);
       return;
     }
 
-    const generation = ++requestGeneration.current;
-    let cancelled = false;
+    const roundedRpm = Math.round(debouncedRpm);
 
-    fetchResponseAt(design, debouncedRpm)
+    // 1. Return from client memory cache immediately if available
+    const cached = responseCache.current.get(roundedRpm);
+    if (cached) {
+      setResponseAt(cached);
+      return;
+    }
+
+    // 2. Abort in-flight HTTP request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // 3. Keep animating previous response while new response loads
+    fetchResponseAt(design, roundedRpm, controller.signal)
       .then((result) => {
-        if (!cancelled && generation === requestGeneration.current) {
-          setResponseAt(result);
-        }
+        responseCache.current.set(roundedRpm, result);
+        setResponseAt(result);
       })
       .catch((error: unknown) => {
-        if (!cancelled && generation === requestGeneration.current) {
-          setResponseAt(null);
-          console.error("[responseAt] Solver request failed:", error);
-          useStore.getState().setUi({
-            error:
-              error instanceof Error
-                ? error.message
-                : "Harmonic response calculation failed.",
-          });
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
         }
+        console.error("[responseAt] Request failed:", error);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [
     design,
@@ -365,11 +369,18 @@ export default function SceneRoot({
     customDesign,
     setResponseAt,
   ]);
+
   return (
     <div className="relative h-full w-full select-none viewport-bg overflow-hidden">
       <Canvas
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: true,
+          powerPreference: "high-performance",
+          alpha: true,
+        }}
+        shadows={false}
+        frameloop={animating ? "always" : "demand"}
         style={{ background: "transparent" }}
       >
         {isPerf && <Stats className="!left-3 !top-20 z-40" />}

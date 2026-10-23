@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useEffect, memo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Billboard } from "@react-three/drei";
 import * as THREE from "three";
@@ -63,7 +63,7 @@ function createTelemetryCanvas(rpm: number, hz: string): HTMLCanvasElement {
   return canvas;
 }
 
-export default function Propeller({
+function PropellerComponent({
   rpm,
   dir = 1,
   visualScale = 0.012,
@@ -79,16 +79,17 @@ export default function Propeller({
     ref.current.rotation.y += dir * ((rpm * 2 * Math.PI) / 60) * visualScale * clampedDt * 60;
   });
 
-  const hz = (rpm / 60).toFixed(0);
+  const roundedRpm = Math.round(rpm / 100) * 100;
+  const hz = (roundedRpm / 60).toFixed(0);
 
   const texture = useMemo(() => {
     if (typeof document === "undefined") return null;
-    const canvas = createTelemetryCanvas(rpm, hz);
+    const canvas = createTelemetryCanvas(roundedRpm, hz);
     const tex = new THREE.CanvasTexture(canvas);
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
     return tex;
-  }, [rpm, hz]);
+  }, [roundedRpm, hz]);
 
   useEffect(() => {
     return () => {
@@ -144,3 +145,5 @@ export default function Propeller({
     </group>
   );
 }
+
+export default memo(PropellerComponent);

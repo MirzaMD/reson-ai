@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, Profiler, type ReactNode } from "react";
+import { useRef, useState, Profiler, type ReactNode } from "react";
 
 interface PerfStats {
   commitsPerSec: number;
@@ -13,15 +13,14 @@ export const perfState = {
 };
 
 export function usePerfMode() {
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
+  const [enabled] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const isPerf = new URLSearchParams(window.location.search).get("perf") === "1";
-      setEnabled(isPerf);
       perfState.enabled = isPerf;
+      return isPerf;
     }
-  }, []);
+    return false;
+  });
 
   return enabled;
 }
@@ -35,7 +34,7 @@ export default function PerfOverlay({ children }: { children: ReactNode }) {
   });
 
   const commitTimestamps = useRef<number[]>([]);
-  const lastUpdate = useRef<number>(Date.now());
+  const lastUpdate = useRef<number>(0);
 
   const onRender = (
     _id: string,
@@ -55,6 +54,10 @@ export default function PerfOverlay({ children }: { children: ReactNode }) {
       commitTimestamps.current.shift();
     }
 
+    if (lastUpdate.current === 0) {
+      lastUpdate.current = now;
+    }
+
     // Update UI stats at most 4 times a second to prevent profiling self-interference
     if (now - lastUpdate.current > 250) {
       lastUpdate.current = now;
@@ -70,28 +73,32 @@ export default function PerfOverlay({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  const commitColor =
-    stats.commitsPerSec <= 4
-      ? "text-emerald-400 bg-emerald-950/80 border-emerald-500/40"
-      : stats.commitsPerSec <= 20
-      ? "text-amber-400 bg-amber-950/80 border-amber-500/40"
-      : "text-red-400 bg-red-950/80 border-red-500/40";
-
   return (
-    <Profiler id="ResonAI_Root" onRender={onRender}>
+    <Profiler id="App" onRender={onRender}>
       {children}
-      <div className="fixed bottom-3 right-3 z-50 flex items-center gap-2 font-mono text-[11px] backdrop-blur-md">
-        <div
-          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 shadow-xl ${commitColor}`}
-        >
-          <span className="inline-block h-2 w-2 rounded-full bg-current animate-pulse" />
-          <span>
-            React Commits: <strong>{stats.commitsPerSec} / sec</strong>
+      {/* Dev-only perf overlay */}
+      <div className="fixed bottom-3 right-3 z-50 pointer-events-none rounded-lg border border-cyan-500/40 bg-[#0d1117]/90 px-3 py-2 font-mono text-[11px] text-cyan-300 shadow-xl backdrop-blur-md">
+        <div className="font-bold text-white mb-1 flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>PERF PROFILER (?perf=1)</span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
+          <span className="text-slate-400">Commits / sec:</span>
+          <span
+            className={
+              stats.commitsPerSec > 10
+                ? "text-red-400 font-bold"
+                : stats.commitsPerSec > 2
+                ? "text-amber-400 font-semibold"
+                : "text-emerald-400 font-semibold"
+            }
+          >
+            {stats.commitsPerSec} /s
           </span>
-          <span className="opacity-40">|</span>
-          <span>Render: {stats.lastDurationMs.toFixed(1)} ms</span>
-          <span className="opacity-40">|</span>
-          <span className="text-[10px] text-cyan-300 font-sans font-medium">?perf=1</span>
+          <span className="text-slate-400">Render time:</span>
+          <span className="text-slate-200">
+            {stats.lastDurationMs.toFixed(2)} ms
+          </span>
         </div>
       </div>
     </Profiler>
