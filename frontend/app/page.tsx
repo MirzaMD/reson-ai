@@ -16,6 +16,7 @@ import AddComponentModal from "@/components/dialogs/AddComponentModal";
 import ValidationModal from "@/components/dialogs/ValidationModal";
 import KidFriendlyGuide from "@/components/ui/KidFriendlyGuide";
 import ToastNotification from "@/components/ui/ToastNotification";
+import PerfOverlay from "@/components/ui/PerfOverlay";
 import { useStore } from "@/lib/store/useStore";
 import { STRUCTURE_PRESETS } from "@/lib/presets/presets";
 import { runClientSimulation } from "@/lib/solver/clientSolver";
@@ -135,86 +136,88 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-canvas">
-      <Toolbar />
-      <KidFriendlyGuide />
-      <ToastNotification />
-      <ErrorBanner />
+    <PerfOverlay>
+      <div className="flex h-screen flex-col overflow-hidden bg-canvas">
+        <Toolbar />
+        <KidFriendlyGuide />
+        <ToastNotification />
+        <ErrorBanner />
 
-      <div className="relative flex min-h-0 flex-1">
-        {/* Left: Model Tree Hierarchy */}
-        <ModelTree />
+        <div className="relative flex min-h-0 flex-1">
+          {/* Left: Model Tree Hierarchy */}
+          <ModelTree />
 
-        {/* Center column: 3D viewport + bottom diagnostic tabs */}
-        <div className="relative flex min-w-0 flex-1 flex-col">
-          {/* 3D Viewport Area */}
-          <div className="relative min-h-0 flex-1">
-            {ui.viewMode === "compare" && optimizeResult ? (
-              <div className="flex h-full flex-col">
-                <div className="relative flex flex-1">
-                  {/* Left viewport: original design */}
-                  <div className="relative flex-1 border-r border-line">
-                    <ViewportBadge tone="danger">Original design</ViewportBadge>
-                    <ErrorBoundary fallbackTitle="Original Viewport Recovery">
-                      <SceneRoot sharedMaxAmp={sharedMaxAmp} />
-                    </ErrorBoundary>
+          {/* Center column: 3D viewport + bottom diagnostic tabs */}
+          <div className="relative flex min-w-0 flex-1 flex-col">
+            {/* 3D Viewport Area */}
+            <div className="relative min-h-0 flex-1">
+              {ui.viewMode === "compare" && optimizeResult ? (
+                <div className="flex h-full flex-col">
+                  <div className="relative flex flex-1">
+                    {/* Left viewport: original design */}
+                    <div className="relative flex-1 border-r border-line">
+                      <ViewportBadge tone="danger">Original design</ViewportBadge>
+                      <ErrorBoundary fallbackTitle="Original Viewport Recovery">
+                        <SceneRoot sharedMaxAmp={sharedMaxAmp} />
+                      </ErrorBoundary>
+                    </div>
+
+                    {/* Right viewport: optimized candidate */}
+                    <div className="relative flex-1">
+                      <ViewportBadge tone="ok">
+                        Optimized candidate #{activeCandidate?.rank ?? 1}
+                      </ViewportBadge>
+                      <ErrorBoundary fallbackTitle="Optimized Viewport Recovery">
+                        <SceneRoot
+                          customDesign={
+                            activeCandidate?.design ??
+                            optimizeResult.candidates[0].design
+                          }
+                          customAnalysis={candSim}
+                          isCompareSecondary={true}
+                          sharedMaxAmp={sharedMaxAmp}
+                        />
+                      </ErrorBoundary>
+                    </div>
                   </div>
 
-                  {/* Right viewport: optimized candidate */}
-                  <div className="relative flex-1">
-                    <ViewportBadge tone="ok">
-                      Optimized candidate #{activeCandidate?.rank ?? 1}
-                    </ViewportBadge>
-                    <ErrorBoundary fallbackTitle="Optimized Viewport Recovery">
-                      <SceneRoot
-                        customDesign={
-                          activeCandidate?.design ??
-                          optimizeResult.candidates[0].design
-                        }
-                        customAnalysis={candSim}
-                        isCompareSecondary={true}
-                        sharedMaxAmp={sharedMaxAmp}
-                      />
-                    </ErrorBoundary>
+                  {/* Compare metrics strip */}
+                  <div className="border-t border-line bg-surface">
+                    <div className="mx-auto max-w-4xl">
+                      <ComparePanel />
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <ErrorBoundary fallbackTitle="3D Viewport Recovery">
+                  <SceneRoot />
+                </ErrorBoundary>
+              )}
 
-                {/* Compare metrics strip */}
-                <div className="border-t border-line bg-surface">
-                  <div className="mx-auto max-w-4xl">
-                    <ComparePanel />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <ErrorBoundary fallbackTitle="3D Viewport Recovery">
-                <SceneRoot />
-              </ErrorBoundary>
-            )}
+              {(ui.isAnalyzing || ui.isOptimizing) && (
+                <LoadingOverlay
+                  message={
+                    ui.isOptimizing
+                      ? "Searching for pad stiffness and damping that reduce shaking…"
+                      : "Running the vibration simulation…"
+                  }
+                />
+              )}
+            </div>
 
-            {(ui.isAnalyzing || ui.isOptimizing) && (
-              <LoadingOverlay
-                message={
-                  ui.isOptimizing
-                    ? "Searching for pad stiffness and damping that reduce shaking…"
-                    : "Running the vibration simulation…"
-                }
-              />
-            )}
+            {/* Bottom diagnostics / plots / findings tabs */}
+            <BottomTabs />
           </div>
 
-          {/* Bottom diagnostics / plots / findings tabs */}
-          <BottomTabs />
+          {/* Right dock: inspector and AI assistant */}
+          <RightDock />
         </div>
 
-        {/* Right dock: inspector and AI assistant */}
-        <RightDock />
+        {/* Dialog modals */}
+        <PresetGalleryModal />
+        <AddComponentModal />
+        <ValidationModal />
       </div>
-
-      {/* Dialog modals */}
-      <PresetGalleryModal />
-      <AddComponentModal />
-      <ValidationModal />
-    </div>
+    </PerfOverlay>
   );
 }

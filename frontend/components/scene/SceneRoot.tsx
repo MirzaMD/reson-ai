@@ -10,7 +10,9 @@ import {
   GizmoHelper,
   GizmoViewport,
   PerspectiveCamera,
+  Stats,
 } from "@react-three/drei";
+import { usePerfMode } from "@/components/ui/PerfOverlay";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useStore, type CameraPreset } from "@/lib/store/useStore";
 import StructureView from "./StructureView";
@@ -193,6 +195,7 @@ function SceneContent({
   sharedMaxAmp?: number;
 }) {
   const storeDesign = useStore((s) => s.design);
+  const isPerf = usePerfMode();
   const storeAnalysis = useStore((s) => s.analysis);
   const storeResponseAt = useStore((s) => s.responseAt);
   const rpm = useStore((s) => s.rpm);
@@ -291,6 +294,7 @@ export default function SceneRoot({
   sharedMaxAmp,
 }: SceneRootProps) {
   const storeDesign = useStore((s) => s.design);
+  const isPerf = usePerfMode();
   const storeAnalysis = useStore((s) => s.analysis);
   const triggerCameraView = useStore((s) => s.triggerCameraView);
   const probe = useStore((s) => s.probe);
@@ -368,6 +372,7 @@ export default function SceneRoot({
         gl={{ antialias: true, alpha: true }}
         style={{ background: "transparent" }}
       >
+        {isPerf && <Stats className="!left-3 !top-20 z-40" />}
         <PerspectiveCamera makeDefault fov={42} near={0.001} far={30} />
         <SceneContent
           activeDesign={design}
