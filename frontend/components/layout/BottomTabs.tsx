@@ -151,29 +151,29 @@ export default function BottomTabs() {
           </div>
 
           <div className="relative flex-1 overflow-hidden">
-            <div className={clsx("h-full w-full", bottomTab === "frf" ? "block" : "hidden")}>
+            {bottomTab === "frf" && (
               <ErrorBoundary fallbackTitle="FRF Chart Recovery">
                 <FrfPlot />
               </ErrorBoundary>
-            </div>
+            )}
 
-            <div className={clsx("h-full w-full", bottomTab === "campbell" ? "block" : "hidden")}>
+            {bottomTab === "campbell" && (
               <ErrorBoundary fallbackTitle="Campbell Diagram Recovery">
                 <CampbellPlot />
               </ErrorBoundary>
-            </div>
+            )}
 
-            <div className={clsx("h-full w-full", bottomTab === "heatmap" ? "block" : "hidden")}>
+            {bottomTab === "heatmap" && (
               <ErrorBoundary fallbackTitle="Heatmap Recovery">
                 <HeatmapPlot />
               </ErrorBoundary>
-            </div>
+            )}
 
-            <div className={clsx("h-full w-full", bottomTab === "findings" ? "block" : "hidden")}>
+            {bottomTab === "findings" && (
               <ErrorBoundary fallbackTitle="Findings Panel Recovery">
                 <FindingsPanel />
               </ErrorBoundary>
-            </div>
+            )}
           </div>
         </div>
       )}

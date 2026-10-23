@@ -1,13 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { useStore } from "@/lib/store/useStore";
 import type { Data } from "plotly.js";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
-export default function HeatmapPlot() {
+function HeatmapPlotComponent() {
   const analysis = useStore((s) => s.analysis);
   const setRpm = useStore((s) => s.setRpm);
 
@@ -92,3 +92,5 @@ export default function HeatmapPlot() {
     />
   );
 }
+
+export default memo(HeatmapPlotComponent);

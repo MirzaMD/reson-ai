@@ -1,18 +1,21 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
+import { useMemo, useDeferredValue, memo } from "react";
 import { useStore } from "@/lib/store/useStore";
 import type { Data } from "plotly.js";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
-export default function CampbellPlot() {
+function CampbellPlotComponent() {
   const analysis = useStore((s) => s.analysis);
   const design = useStore((s) => s.design);
   const rpm = useStore((s) => s.rpm);
   const setRpm = useStore((s) => s.setRpm);
 
+  const deferredRpm = useDeferredValue(rpm);
+
+  // Stable Campbell data: decoupled from RPM slider scrub!
   const data = useMemo<Data[]>(() => {
     if (!analysis?.campbell || !design) return [];
 
@@ -22,7 +25,6 @@ export default function CampbellPlot() {
 
     // Natural frequency lines (horizontal) + ±15% danger bands
     analysis.campbell.mode_freqs_hz.forEach((f, i) => {
-      // ±15% exclusion band
       const fUpper = f * 1.15;
       const fLower = f * 0.85;
 
@@ -39,24 +41,24 @@ export default function CampbellPlot() {
         hoverinfo: "skip",
       });
 
-      // Nominal mode natural frequency
       traces.push({
         x: [rpmMin, rpmMax],
         y: [f, f],
         type: "scatter",
         mode: "lines",
         name: `Mode ${i + 1} (${f.toFixed(1)} Hz)`,
-        line: { color: "#22c55e", width: 1.8 },
+        line: { color: "#38bdf8", width: 1.8 },
       });
     });
 
-    // Excitation order lines (sloped)
-    const orderColors = ["#38bdf8", "#a78bfa", "#f59e0b"];
+    // Excitation order lines (sloped lines f = order * rpm / 60)
+    const orderColors = ["#f59e0b", "#ec4899", "#8b5cf6", "#10b981"];
     const crossingPoints: { rpm: number; hz: number; label: string }[] = [];
 
     analysis.campbell.lines.forEach((line, i) => {
       const x = [rpmMin, rpmMax];
-      const y = x.map((r) => (line.order * r) / 60);
+      const y = [(line.order * rpmMin) / 60, (line.order * rpmMax) / 60];
+
       traces.push({
         x,
         y,
@@ -103,20 +105,40 @@ export default function CampbellPlot() {
       });
     }
 
-    // Current RPM Indicator
-    const maxFreq = Math.max(...analysis.campbell.mode_freqs_hz, 200);
-    traces.push({
-      x: [rpm, rpm],
-      y: [0, maxFreq * 1.3],
-      type: "scatter",
-      mode: "lines",
-      name: "Current RPM",
-      line: { color: "#ef4444", width: 1.5, dash: "dot" },
-      showlegend: false,
-    });
-
     return traces;
-  }, [analysis, design, rpm]);
+  }, [analysis, design]);
+
+  const layout = useMemo(() => {
+    return {
+      autosize: true,
+      margin: { l: 55, r: 25, t: 15, b: 40 },
+      paper_bgcolor: "transparent",
+      plot_bgcolor: "transparent",
+      font: { family: "Inter, sans-serif", size: 11, color: "#8b949e" },
+      xaxis: {
+        title: "Shaft Rotation Speed (RPM)",
+        gridcolor: "#21262d",
+        color: "#8b949e",
+      },
+      yaxis: {
+        title: "Frequency (Hz)",
+        gridcolor: "#21262d",
+        color: "#8b949e",
+      },
+      legend: { orientation: "h" as const, y: 1.15, font: { size: 10 } },
+      shapes: [
+        {
+          type: "line" as const,
+          x0: deferredRpm,
+          x1: deferredRpm,
+          y0: 0,
+          y1: 1,
+          yref: "paper" as const,
+          line: { color: "#ef4444", width: 1.5, dash: "dot" as const },
+        },
+      ],
+    };
+  }, [deferredRpm]);
 
   if (!analysis) {
     return (
@@ -129,27 +151,11 @@ export default function CampbellPlot() {
   return (
     <Plot
       data={data}
-      layout={{
-        autosize: true,
-        margin: { l: 55, r: 25, t: 15, b: 40 },
-        paper_bgcolor: "transparent",
-        plot_bgcolor: "transparent",
-        font: { family: "Inter, sans-serif", size: 11, color: "#8b949e" },
-        xaxis: {
-          title: "Shaft Rotation Speed (RPM)",
-          gridcolor: "#21262d",
-          color: "#8b949e",
-        },
-        yaxis: {
-          title: "Frequency (Hz)",
-          gridcolor: "#21262d",
-          color: "#8b949e",
-        },
-        legend: { orientation: "h", y: 1.15, font: { size: 10 } },
-      }}
+      layout={layout}
       config={{ displayModeBar: false, responsive: true }}
       style={{ width: "100%", height: "100%" }}
       useResizeHandler
+      revision={deferredRpm}
       onClick={(e: Readonly<Plotly.PlotMouseEvent>) => {
         if (e.points?.[0]?.x != null) {
           setRpm(Math.round(Number(e.points[0].x)));
@@ -158,3 +164,5 @@ export default function CampbellPlot() {
     />
   );
 }
+
+export default memo(CampbellPlotComponent);

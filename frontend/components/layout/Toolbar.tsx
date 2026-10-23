@@ -60,7 +60,17 @@ export default function Toolbar() {
   const analysis = useStore((s) => s.analysis);
   const optimizeResult = useStore((s) => s.optimizeResult); // reactive: was getState() before
   const rpm = useStore((s) => s.rpm);
-  const ui = useStore((s) => s.ui);
+  const viewMode = useStore((s) => s.ui.viewMode);
+  const isAnalyzing = useStore((s) => s.ui.isAnalyzing);
+  const isOptimizing = useStore((s) => s.ui.isOptimizing);
+  const exaggeration = useStore((s) => s.ui.exaggeration);
+  const showMesh = useStore((s) => s.ui.showMesh);
+  const showGhost = useStore((s) => s.ui.showGhost);
+  const animating = useStore((s) => s.ui.animating);
+  const showGuideBanner = useStore((s) => s.ui.showGuideBanner);
+  const leftSidebarOpen = useStore((s) => s.ui.leftSidebarOpen);
+  const bottomPanelOpen = useStore((s) => s.ui.bottomPanelOpen);
+  const rightPanelOpen = useStore((s) => s.ui.rightPanelOpen);
   const setUi = useStore((s) => s.setUi);
   const setAnalysis = useStore((s) => s.setAnalysis);
   const setOptimizeResult = useStore((s) => s.setOptimizeResult);
@@ -70,7 +80,7 @@ export default function Toolbar() {
 
   const rpmMin = design?.analysis.rpm_min ?? 500;
   const rpmMax = design?.analysis.rpm_max ?? 12000;
-  const compareOn = ui.viewMode === "compare";
+  const compareOn = viewMode === "compare";
 
   const handleRun = async () => {
     if (!design) return;
@@ -162,10 +172,10 @@ export default function Toolbar() {
             type="button"
             className="btn btn-primary"
             onClick={handleRun}
-            disabled={!design || ui.isAnalyzing}
+            disabled={!design || isAnalyzing}
             title="Simulate motor vibrations to see what shakes"
           >
-            {ui.isAnalyzing ? (
+            {isAnalyzing ? (
               <Loader2 size={15} className="animate-spin" aria-hidden />
             ) : (
               <Play size={15} className="fill-current" aria-hidden />
@@ -177,10 +187,10 @@ export default function Toolbar() {
             type="button"
             className="btn btn-secondary"
             onClick={handleOptimize}
-            disabled={!design || !analysis || ui.isOptimizing}
+            disabled={!design || !analysis || isOptimizing}
             title="Finds softer rubber pads to reduce the shaking"
           >
-            {ui.isOptimizing ? (
+            {isOptimizing ? (
               <Loader2 size={15} className="animate-spin" aria-hidden />
             ) : (
               <Sparkles size={15} aria-hidden />
@@ -244,41 +254,41 @@ export default function Toolbar() {
             type="range"
             min={1}
             max={200}
-            value={ui.exaggeration}
+            value={exaggeration}
             onChange={(e) => setUi({ exaggeration: Number(e.target.value) })}
-            style={{ "--fill": fillPct(ui.exaggeration, 1, 200) } as CSSProperties}
+            style={{ "--fill": fillPct(exaggeration, 1, 200) } as CSSProperties}
             className="w-20"
           />
           <output
             htmlFor="zoom-slider"
             className="min-w-[3rem] text-right font-mono text-[13px] font-medium tabular-nums text-ink"
           >
-            {ui.exaggeration}×
+            {exaggeration}×
           </output>
         </div>
 
         <div className="seg" role="group" aria-label="View options">
           <SegButton
-            pressed={ui.showMesh}
+            pressed={showMesh}
             label="Wireframe"
             hint="Show the wireframe skeleton"
-            onClick={() => setUi({ showMesh: !ui.showMesh })}
+            onClick={() => setUi({ showMesh: !showMesh })}
           >
             <Grid3X3 size={15} aria-hidden />
           </SegButton>
           <SegButton
-            pressed={ui.showGhost}
+            pressed={showGhost}
             label="Resting shape"
             hint="Show the resting shape (where parts sit when the motors are off)"
-            onClick={() => setUi({ showGhost: !ui.showGhost })}
+            onClick={() => setUi({ showGhost: !showGhost })}
           >
             <Eye size={15} aria-hidden />
           </SegButton>
           <SegButton
-            pressed={ui.animating}
+            pressed={animating}
             label="Animate vibration"
             hint="Play or pause the vibration animation"
-            onClick={() => setUi({ animating: !ui.animating })}
+            onClick={() => setUi({ animating: !animating })}
           >
             <Vibrate size={15} aria-hidden />
           </SegButton>
@@ -290,9 +300,9 @@ export default function Toolbar() {
         <button
           type="button"
           className="btn btn-ghost"
-          aria-pressed={ui.showGuideBanner}
+          aria-pressed={showGuideBanner}
           aria-label="How it works"
-          onClick={() => setUi({ showGuideBanner: !ui.showGuideBanner })}
+          onClick={() => setUi({ showGuideBanner: !showGuideBanner })}
           title="Show or hide the beginner guide"
         >
           <HelpCircle size={15} aria-hidden />
@@ -314,26 +324,26 @@ export default function Toolbar() {
 
         <div className="seg" role="group" aria-label="Panels">
           <SegButton
-            pressed={ui.leftSidebarOpen}
+            pressed={leftSidebarOpen}
             label="Parts list"
             hint="Show or hide the parts list"
-            onClick={() => setUi({ leftSidebarOpen: !ui.leftSidebarOpen })}
+            onClick={() => setUi({ leftSidebarOpen: !leftSidebarOpen })}
           >
             <PanelLeft size={15} aria-hidden />
           </SegButton>
           <SegButton
-            pressed={ui.bottomPanelOpen}
+            pressed={bottomPanelOpen}
             label="Charts and diagnostics"
             hint="Show or hide charts and diagnostics"
-            onClick={() => setUi({ bottomPanelOpen: !ui.bottomPanelOpen })}
+            onClick={() => setUi({ bottomPanelOpen: !bottomPanelOpen })}
           >
             <PanelBottom size={15} aria-hidden />
           </SegButton>
           <SegButton
-            pressed={ui.rightPanelOpen}
+            pressed={rightPanelOpen}
             label="Inspector and assistant"
             hint="Show or hide the part inspector and AI assistant"
-            onClick={() => setUi({ rightPanelOpen: !ui.rightPanelOpen })}
+            onClick={() => setUi({ rightPanelOpen: !rightPanelOpen })}
           >
             <PanelRight size={15} aria-hidden />
           </SegButton>
