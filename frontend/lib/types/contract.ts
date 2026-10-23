@@ -331,6 +331,8 @@ export interface AgentResponse {
   warnings: string[];
   action?: "run_analysis" | "run_optimization" | null;
   clarifying_question?: string | null;
+  op_descriptions?: string[];
+  source?: "llm" | "fallback" | string;
 }
 
 // ─── /validate ───────────────────────────────────────────────────────────────

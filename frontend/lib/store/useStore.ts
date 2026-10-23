@@ -14,7 +14,8 @@ import type {
 } from "@/lib/types/contract";
 import { analyze } from "@/lib/api/client";
 
-export type BottomTab = "frf" | "campbell" | "heatmap" | "findings" | "validation";
+export type BottomTab = "frf" | "campbell" | "heatmap";
+export type RightTab = "findings" | "copilot" | "details";
 export type ViewMode = "single" | "compare";
 export type CameraPreset = "front" | "top" | "iso" | "fit";
 
@@ -45,12 +46,11 @@ interface UiState {
   exaggeration: number;
   animating: boolean;
   isRpmSweeping: boolean;
-  chatOpen: boolean;
   agentMode: AgentMode;
   leftSidebarOpen: boolean;
   bottomPanelOpen: boolean;
   rightPanelOpen: boolean;
-  rightTab: "details" | "chat";
+  rightTab: RightTab;
   isAnalyzing: boolean;
   isOptimizing: boolean;
   isChatting: boolean;
@@ -59,7 +59,10 @@ interface UiState {
   presetPickerOpen: boolean;
   addComponentModalOpen: boolean;
   validationModalOpen: boolean;
-  showGuideBanner: boolean;
+  helpPopoverOpen: boolean;
+  isFocusMode: boolean;
+  hasRunOnce: boolean;
+  showGuideBanner?: boolean;
   toast: ToastInfo | null;
 }
 
@@ -98,6 +101,7 @@ interface Store {
   setCameraState: (pos: [number, number, number], target: [number, number, number]) => void;
   triggerCameraView: (preset: CameraPreset) => void;
   setUi: (partial: Partial<UiState>) => void;
+  toggleFocusMode: () => void;
   addChatMessage: (m: AgentMessage) => void;
   clearChat: () => void;
   pushHistory: (d: Design) => void;
@@ -119,12 +123,11 @@ const defaultUi: UiState = {
   exaggeration: 50,
   animating: true,
   isRpmSweeping: false,
-  chatOpen: true,
   agentMode: "build",
-  leftSidebarOpen: true,
-  bottomPanelOpen: true,
+  leftSidebarOpen: true, // Default open in Build state
+  bottomPanelOpen: false, // Collapsed to 40px bar by default
   rightPanelOpen: true,
-  rightTab: "details",
+  rightTab: "copilot", // Default Copilot before first Run
   isAnalyzing: false,
   isOptimizing: false,
   isChatting: false,
@@ -133,7 +136,9 @@ const defaultUi: UiState = {
   presetPickerOpen: false,
   addComponentModalOpen: false,
   validationModalOpen: false,
-  showGuideBanner: true,
+  helpPopoverOpen: false,
+  isFocusMode: false,
+  hasRunOnce: false,
   toast: null,
 };
 
@@ -154,39 +159,55 @@ export const useStore = create<Store>((set, get) => ({
   history: [],
   historyIndex: -1,
 
-setDesign: (d) =>
-  set({
-    design: d,
-    analysis: null,
-    responseAt: null,
-    optimizeResult: null,
-    activeCandidate: null,
-  }),
+  setDesign: (d) =>
+    set({
+      design: d,
+      analysis: null,
+      responseAt: null,
+      optimizeResult: null,
+      activeCandidate: null,
+    }),
 
-updateDesign: (fn) => {
-  const current = get().design;
-  if (!current) return;
+  updateDesign: (fn) => {
+    const current = get().design;
+    if (!current) return;
 
-  const next = fn(current);
-  get().pushHistory(next);
+    const next = fn(current);
+    get().pushHistory(next);
 
-  set({
-    design: next,
-    analysis: null,
-    responseAt: null,
-    optimizeResult: null,
-    activeCandidate: null,
-  });
-},
-  setAnalysis: (a) => set({ analysis: a }),
+    set({
+      design: next,
+      analysis: null,
+      responseAt: null,
+      optimizeResult: null,
+      activeCandidate: null,
+    });
+  },
+
+  setAnalysis: (a) =>
+    set((state) => ({
+      analysis: a,
+      ui: a
+        ? {
+            ...state.ui,
+            hasRunOnce: true,
+            leftSidebarOpen: false, // auto-collapse left panel after successful Run
+            rightTab: "findings", // default right tab to findings after Run
+            rightPanelOpen: true,
+          }
+        : state.ui,
+    })),
+
   setResponseAt: (r) => set({ responseAt: r }),
   setOptimizeResult: (o) => set({ optimizeResult: o }),
   setActiveCandidate: (c) => set({ activeCandidate: c }),
+
   setSelection: (s) =>
     set((state) => ({
       selection: s,
       ui: s.type ? { ...state.ui, rightPanelOpen: true, rightTab: "details" } : state.ui,
     })),
+
   setRpm: (rpm) => set({ rpm }),
   setTime: (t) => set({ time: t }),
   setProbe: (probe) => set({ probe }),
@@ -198,6 +219,30 @@ updateDesign: (fn) => {
 
   setUi: (partial) =>
     set((state) => ({ ui: { ...state.ui, ...partial } })),
+
+  toggleFocusMode: () => {
+    const isFocus = get().ui.isFocusMode;
+    if (!isFocus) {
+      set((s) => ({
+        ui: {
+          ...s.ui,
+          isFocusMode: true,
+          leftSidebarOpen: false,
+          rightPanelOpen: false,
+          bottomPanelOpen: false,
+        },
+      }));
+    } else {
+      set((s) => ({
+        ui: {
+          ...s.ui,
+          isFocusMode: false,
+          leftSidebarOpen: !s.ui.hasRunOnce,
+          rightPanelOpen: true,
+        },
+      }));
+    }
+  },
 
   addChatMessage: (m) =>
     set((state) => ({ chatMessages: [...state.chatMessages, m] })),
@@ -233,7 +278,13 @@ updateDesign: (fn) => {
     if (f.mode != null) {
       set((s) => ({ ui: { ...s.ui, selectedMode: f.mode ?? null } }));
     }
-    set((s) => ({ ui: { ...s.ui, bottomTab: "findings" } }));
+    set((s) => ({
+      ui: {
+        ...s.ui,
+        rightPanelOpen: true,
+        rightTab: "findings",
+      },
+    }));
   },
 
   applyCandidate: (c) => {
@@ -266,12 +317,20 @@ updateDesign: (fn) => {
       optimizeResult: null,
       activeCandidate: null,
     });
-    get().showToast(`🗑️ Removed ${compName}! Simulation recalculated.`, "info");
+    get().showToast(`Removed ${compName}. Recalculating...`, "info");
 
     try {
       set((s) => ({ ui: { ...s.ui, isAnalyzing: true } }));
       const res = await analyze(next);
-      set({ analysis: res });
+      set((state) => ({
+        analysis: res,
+        ui: {
+          ...state.ui,
+          hasRunOnce: true,
+          leftSidebarOpen: false,
+          rightTab: "findings",
+        },
+      }));
     } catch (err) {
       console.error("[deleteComponent] Re-simulation error:", err);
     } finally {

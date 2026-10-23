@@ -1,27 +1,49 @@
 "use client";
 
-import { Activity } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   message?: string;
+  isOptimizing?: boolean;
 }
 
-export default function LoadingOverlay({ message = "Solving dynamics…" }: Props) {
+const OPTIMIZE_STAGES = [
+  "Evaluating mount stiffness (kv)...",
+  "Tuning isolator damping (zeta)...",
+  "Checking harmonic sweep attenuation...",
+  "Converging optimal candidate...",
+];
+
+export default function LoadingOverlay({
+  message = "Solving dynamics...",
+  isOptimizing = false,
+}: Props) {
+  const [stageIdx, setStageIdx] = useState(0);
+
+  useEffect(() => {
+    if (!isOptimizing) return;
+    const interval = setInterval(() => {
+      setStageIdx((i) => (i + 1) % OPTIMIZE_STAGES.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isOptimizing]);
+
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md animate-fade-in">
-      <div className="flex flex-col items-center gap-3.5 rounded-2xl border border-white/[0.1] bg-[#0c111a]/95 px-8 py-6 shadow-2xl shadow-cyan-950/40 text-center">
-        <div className="relative flex h-12 w-12 items-center justify-center">
-          <div className="absolute inset-0 rounded-full border-2 border-cyan-500/20" />
-          <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-cyan-400" />
-          <Activity size={18} className="animate-pulse text-cyan-400" />
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-canvas/40 backdrop-blur-xs animate-in fade-in duration-100">
+      <div className="flex flex-col items-center gap-2.5 rounded-lg border border-line bg-surface px-6 py-4 shadow-lg text-center max-w-xs">
+        <div className="relative flex h-8 w-8 items-center justify-center">
+          <Loader2 size={24} className="animate-spin text-accent" />
         </div>
         <div>
-          <p className="text-sm font-semibold tracking-tight text-[#f1f5f9]">{message}</p>
-          <p className="mt-0.5 font-mono text-[11px] text-[#64748b]">Euler-Bernoulli Reduced-Order ROM</p>
+          <p className="text-xs font-semibold text-ink">
+            {isOptimizing ? OPTIMIZE_STAGES[stageIdx] : message}
+          </p>
+          <p className="mt-0.5 font-mono text-[10px] text-muted">
+            {isOptimizing ? "Isolator Optimization (ROM Search)" : "Reduced-Order Harmonic Sweep"}
+          </p>
         </div>
       </div>
     </div>
   );
 }
-
-

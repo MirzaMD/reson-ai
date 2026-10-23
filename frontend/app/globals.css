@@ -1,35 +1,31 @@
-/* → replaces app/globals.css
-   Tailwind v4: one @import, and the theme lives here (no tailwind.config.ts).
-   Delete tailwind.config.ts, since v4 does not read it automatically. */
 @import "tailwindcss";
 
-/* ───────────── Theme tokens → utilities (bg-surface, text-ink, border-line …) ───────────── */
+/* ───────────── Design Tokens (Light Theme) ───────────── */
 @theme {
-  --color-canvas: #eef2f7; /* app background */
-  --color-surface: #ffffff; /* header, panels, cards */
-  --color-panel: #f7f9fc; /* tinted groups on a surface */
-  --color-sunken: #e8edf4; /* segmented-control tracks */
-  --color-line: #d5dde8; /* borders */
-  --color-line-subtle: #e3e9f1; /* dividers inside panels */
+  --color-canvas: #f6f8fa;
+  --color-surface: #ffffff;
+  --color-panel: #f0f3f6;
+  --color-sunken: #e5ebf1;
+  --color-line: #d0d7de;
+  --color-line-subtle: #e6ebf1;
 
-  --color-ink: #0e1a2b; /* primary text */
-  --color-ink-2: #44546a; /* secondary text */
-  --color-muted: #5e6f86; /* hints (4.5:1+ on white) */
+  --color-ink: #1f2328;
+  --color-ink-2: #3d444d;
+  --color-muted: #59636e;
 
-  --color-accent: #0e7490; /* the one accent */
-  --color-accent-hover: #0c627a;
-  --color-accent-soft: #e0f2f7;
-  --color-accent-line: #9ccfdd;
+  --color-accent: #0284c7;
+  --color-accent-hover: #0369a1;
+  --color-accent-soft: #e0f2fe;
+  --color-accent-line: #7dd3fc;
 
-  --color-ok: #0f7b5f;
-  --color-ok-soft: #e0f5ee;
-  --color-warn: #b45309;
-  --color-warn-soft: #fef3e0;
-  --color-danger: #c62828;
-  --color-danger-soft: #fde8e8;
+  --color-ok: #16a34a;
+  --color-ok-soft: #dcfce7;
+  --color-warn: #d97706;
+  --color-warn-soft: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
 }
 
-/* `inline` because these point at variables that next/font defines on <html> */
 @theme inline {
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
@@ -44,7 +40,7 @@
   html,
   body {
     height: 100%;
-    overflow: hidden; /* app-shell layout; panels scroll internally */
+    overflow: hidden; /* App-shell layout; panels scroll internally */
     background: var(--color-canvas);
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
@@ -56,22 +52,22 @@
     line-height: 1.5;
   }
 
-  /* Tailwind v4 resets buttons to the default cursor */
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
 
-  /* Visible keyboard focus everywhere */
+  /* Keyboard accessibility */
   button:focus-visible,
   a:focus-visible,
   [role="button"]:focus-visible,
-  input[type="range"]:focus-visible {
+  input:focus-visible,
+  select:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
 
-  /* Form inputs (base layer, so utilities like px-2 / text-xs can override) */
+  /* Form inputs */
   input[type="number"],
   input[type="text"],
   select,
@@ -97,12 +93,12 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
   }
 
-  /* Range sliders with a filled track. Set --fill inline: style={{ "--fill": "40%" }} */
+  /* Range sliders */
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     background: transparent;
-    height: 16px; /* comfortable hit area */
+    height: 16px;
     padding: 0;
     border: 0;
   }
@@ -120,11 +116,15 @@
     box-sizing: border-box;
     width: 14px;
     height: 14px;
-    margin-top: -5px; /* (track 4px − thumb 14px) / 2 */
+    margin-top: -5px;
     border-radius: 50%;
     background: var(--color-surface);
     border: 2px solid var(--color-accent);
-    box-shadow: 0 1px 2px rgb(14 26 43 / 0.2);
+    box-shadow: 0 1px 3px rgba(31, 35, 40, 0.18);
+    transition: transform 0.1s ease;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
   }
   input[type="range"]::-moz-range-track {
     height: 4px;
@@ -143,17 +143,17 @@
     border-radius: 50%;
     background: var(--color-surface);
     border: 2px solid var(--color-accent);
-    box-shadow: 0 1px 2px rgb(14 26 43 / 0.2);
+    box-shadow: 0 1px 3px rgba(31, 35, 40, 0.18);
   }
 
-  /* Scrollbars (Firefox + WebKit) */
+  /* Scrollbars */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-line) transparent;
   }
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
@@ -161,12 +161,9 @@
   ::-webkit-scrollbar-thumb {
     background: var(--color-line);
     border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-muted);
-    background-clip: content-box;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -176,9 +173,8 @@
   }
 }
 
-/* ───────────── Components (utilities can still override these) ───────────── */
+/* ───────────── Component Utility Classes ───────────── */
 @layer components {
-  /* Radii: 8px for containers, 6px for controls. Nothing else. */
   .panel {
     background: var(--color-surface);
     border: 1px solid var(--color-line);
@@ -189,14 +185,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--color-line-subtle);
     font-size: 12px;
     font-weight: 600;
     color: var(--color-ink-2);
   }
 
-  /* Buttons: flat, one height, specific transitions */
+  /* Standard button hierarchy */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -209,24 +205,21 @@
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
-    transition: background-color 0.15s ease, border-color 0.15s ease,
-      color 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
   .btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }
 
-  /* The ONE filled button on screen: the main action */
   .btn-primary {
     background: var(--color-accent);
-    color: #fff;
+    color: #ffffff;
   }
   .btn-primary:hover:not(:disabled) {
     background: var(--color-accent-hover);
   }
 
-  /* Important, but not primary */
   .btn-secondary {
     background: var(--color-surface);
     border-color: var(--color-accent-line);
@@ -236,10 +229,9 @@
     background: var(--color-accent-soft);
   }
 
-  /* Neutral + toggle (use aria-pressed for the "on" state) */
   .btn-ghost {
-    background: var(--color-surface);
-    border-color: var(--color-line);
+    background: transparent;
+    border-color: transparent;
     color: var(--color-ink-2);
   }
   .btn-ghost:hover:not(:disabled) {
@@ -252,54 +244,54 @@
     color: var(--color-accent);
   }
 
-  .btn-success {
-    background: var(--color-ok);
-    color: #fff;
+  .btn-outline {
+    background: var(--color-surface);
+    border-color: var(--color-line);
+    color: var(--color-ink-2);
   }
-  .btn-success:hover:not(:disabled) {
-    filter: brightness(0.92);
-  }
-  .btn-danger {
-    background: var(--color-danger);
-    color: #fff;
-  }
-  .btn-danger:hover:not(:disabled) {
-    filter: brightness(0.92);
+  .btn-outline:hover:not(:disabled) {
+    background: var(--color-panel);
+    color: var(--color-ink);
+    border-color: var(--color-line);
   }
 
-  /* Segmented icon group (view toggles, panel toggles) */
+  /* Segmented control */
   .seg {
     display: inline-flex;
+    align-items: center;
     gap: 2px;
     padding: 2px;
     background: var(--color-sunken);
-    border-radius: 8px;
+    border-radius: 6px;
   }
   .seg-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 5px 8px;
-    border-radius: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--color-ink-2);
     transition: background-color 0.15s ease, color 0.15s ease;
   }
   .seg-btn:hover {
     color: var(--color-ink);
   }
-  .seg-btn[aria-pressed="true"] {
+  .seg-btn[aria-pressed="true"],
+  .seg-btn.active {
     background: var(--color-surface);
     color: var(--color-accent);
-    box-shadow: 0 1px 2px rgb(14 26 43 / 0.12);
+    box-shadow: 0 1px 2px rgba(31, 35, 40, 0.08);
   }
 
-  /* 3D viewport: pale, cool studio backdrop */
+  /* 3D viewport studio backdrop */
   .viewport-bg {
-    background: radial-gradient(circle at 50% 40%, #ffffff 0%, #dde6f0 100%);
+    background: radial-gradient(circle at 50% 45%, #ffffff 0%, #e2e8f0 100%);
   }
 
   .glass-panel {
-    background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(8px);
     border: 1px solid var(--color-line);
   }
@@ -308,25 +300,30 @@
   .chat-user {
     background: var(--color-accent-soft);
     border: 1px solid var(--color-accent-line);
+    color: var(--color-ink);
   }
   .chat-assistant {
     background: var(--color-surface);
-    border: 1px solid var(--color-line-subtle);
+    border: 1px solid var(--color-line);
+    color: var(--color-ink);
   }
 
-  /* Severity indicators */
+  /* Severity edges */
   .finding-critical {
     border-left: 3px solid var(--color-danger);
   }
   .finding-warning {
     border-left: 3px solid var(--color-warn);
   }
+  .finding-info {
+    border-left: 3px solid var(--color-accent);
+  }
   .finding-ok {
     border-left: 3px solid var(--color-ok);
   }
 }
 
-/* Plotly modebar */
+/* Plotly overrides */
 .js-plotly-plot .plotly .modebar {
   top: 4px !important;
   right: 4px !important;

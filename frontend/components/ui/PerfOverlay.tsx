@@ -77,26 +77,26 @@ export default function PerfOverlay({ children }: { children: ReactNode }) {
     <Profiler id="App" onRender={onRender}>
       {children}
       {/* Dev-only perf overlay */}
-      <div className="fixed bottom-3 right-3 z-50 pointer-events-none rounded-lg border border-cyan-500/40 bg-[#0d1117]/90 px-3 py-2 font-mono text-[11px] text-cyan-300 shadow-xl backdrop-blur-md">
-        <div className="font-bold text-white mb-1 flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+      <div className="fixed bottom-3 right-3 z-50 pointer-events-none rounded-md border border-line bg-surface/95 px-3 py-2 font-mono text-[11px] text-ink shadow-lg backdrop-blur-xs">
+        <div className="font-semibold text-ink mb-1 flex items-center gap-1.5 text-xs">
+          <span className="h-2 w-2 rounded-full bg-ok animate-pulse" />
           <span>PERF PROFILER (?perf=1)</span>
         </div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
-          <span className="text-slate-400">Commits / sec:</span>
+          <span className="text-muted">Commits / sec:</span>
           <span
             className={
               stats.commitsPerSec > 10
-                ? "text-red-400 font-bold"
+                ? "text-danger font-bold"
                 : stats.commitsPerSec > 2
-                ? "text-amber-400 font-semibold"
-                : "text-emerald-400 font-semibold"
+                ? "text-warn font-semibold"
+                : "text-ok font-semibold"
             }
           >
             {stats.commitsPerSec} /s
           </span>
-          <span className="text-slate-400">Render time:</span>
-          <span className="text-slate-200">
+          <span className="text-muted">Render time:</span>
+          <span className="text-ink-2">
             {stats.lastDurationMs.toFixed(2)} ms
           </span>
         </div>
