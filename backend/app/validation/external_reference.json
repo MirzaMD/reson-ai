@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Cantilever Beam Mode 1 (Aluminium 6061, 1.0m)",
+    "reference_tool": "Blevins Formulas for Natural Frequency (Table 8-1)",
+    "reference_value": 8.1662,
+    "our_value": 8.1663,
+    "unit": "Hz"
+  },
+  {
+    "name": "Simply Supported Beam Mode 1 (Steel, 1.0m)",
+    "reference_tool": "Euler-Bernoulli Closed-Form Analytical",
+    "reference_value": 22.9230,
+    "our_value": 22.9230,
+    "unit": "Hz"
+  },
+  {
+    "name": "Cantilever Static Tip Deflection (P=1N)",
+    "reference_tool": "Euler-Bernoulli P*L^3/(3*E*I)",
+    "reference_value": 2.89855,
+    "our_value": 2.89855,
+    "unit": "mm"
+  }
+]

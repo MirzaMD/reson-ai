@@ -1,0 +1,690 @@
+{
+  "candidates": [
+    {
+      "rank": 1,
+      "label": "Best overall",
+      "changes": [
+        {
+          "path": "components.camera.mount.kv",
+          "from": 40000.0,
+          "to": 6422.4,
+          "label": "Camera mount stiffness 40.0 -> 6.4 kN/m"
+        },
+        {
+          "path": "components.camera.mount.zeta",
+          "from": 0.15,
+          "to": 0.287,
+          "label": "Camera mount damping ratio 0.15 -> 0.29"
+        },
+        {
+          "path": "components.imu.mount.kv",
+          "from": 10000.0,
+          "to": 47531.6,
+          "label": "Imu mount stiffness 10.0 -> 47.5 kN/m"
+        },
+        {
+          "path": "components.imu.mount.zeta",
+          "from": 0.2,
+          "to": 0.232,
+          "label": "Imu mount damping ratio 0.20 -> 0.23"
+        }
+      ],
+      "design": {
+        "name": "Quad_Drone_Diagonal",
+        "plane": "xy",
+        "nodes": [
+          {
+            "id": "n1",
+            "x": -0.15,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "id": "n2",
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "id": "n3",
+            "x": 0.15,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ],
+        "members": [
+          {
+            "id": "m1",
+            "n1": "n1",
+            "n2": "n2",
+            "material": "cfrp",
+            "section": {
+              "type": "rect",
+              "w": 0.016,
+              "h": 0.004
+            }
+          },
+          {
+            "id": "m2",
+            "n1": "n2",
+            "n2": "n3",
+            "material": "cfrp",
+            "section": {
+              "type": "rect",
+              "w": 0.016,
+              "h": 0.004
+            }
+          }
+        ],
+        "supports": [
+          {
+            "node": "n2",
+            "type": "spring",
+            "kx": 2000.0,
+            "ky": 2000.0,
+            "kr": 5.0
+          }
+        ],
+        "components": [
+          {
+            "id": "motor_left",
+            "kind": "motor",
+            "member": "m1",
+            "s": 0.0,
+            "mass": 0.055,
+            "mount": {
+              "preset": "rubber_medium",
+              "kv": 100000.0,
+              "zeta": 0.08
+            },
+            "excitation": {
+              "type": "unbalance",
+              "rpm_min": 1000.0,
+              "rpm_max": 12000.0,
+              "me": 1.8e-06,
+              "orders": [
+                1.0
+              ],
+              "blades": 2
+            },
+            "limit_g": null
+          },
+          {
+            "id": "motor_right",
+            "kind": "motor",
+            "member": "m2",
+            "s": 1.0,
+            "mass": 0.055,
+            "mount": {
+              "preset": "rubber_medium",
+              "kv": 100000.0,
+              "zeta": 0.08
+            },
+            "excitation": {
+              "type": "unbalance",
+              "rpm_min": 1000.0,
+              "rpm_max": 12000.0,
+              "me": 1.8e-06,
+              "orders": [
+                1.0
+              ],
+              "blades": 2
+            },
+            "limit_g": null
+          },
+          {
+            "id": "camera",
+            "kind": "camera",
+            "member": "m2",
+            "s": 0.15,
+            "mass": 0.15,
+            "mount": {
+              "preset": "silicone_gel",
+              "kv": 6422.388835273456,
+              "zeta": 0.28724985445776274
+            },
+            "excitation": null,
+            "limit_g": 0.5
+          },
+          {
+            "id": "imu",
+            "kind": "gyro",
+            "member": "m1",
+            "s": 0.85,
+            "mass": 0.005,
+            "mount": {
+              "preset": "foam",
+              "kv": 47531.56213176943,
+              "zeta": 0.23248764247427076
+            },
+            "excitation": null,
+            "limit_g": 1.0
+          },
+          {
+            "id": "battery_center",
+            "kind": "battery",
+            "member": "m1",
+            "s": 1.0,
+            "mass": 0.25,
+            "mount": {
+              "preset": "rigid",
+              "kv": 100000000.0,
+              "zeta": 0.01
+            },
+            "excitation": null,
+            "limit_g": null
+          }
+        ],
+        "analysis": {
+          "rpm_min": 1000.0,
+          "rpm_max": 12000.0,
+          "n_points": 400,
+          "beam_zeta": 0.02,
+          "n_elements_per_member": 20
+        }
+      },
+      "metrics_before": {
+        "components": {
+          "motor_left": {
+            "peak_accel_g": 8.824,
+            "at_rpm": 3177.9,
+            "limit_g": null,
+            "status": "ok"
+          },
+          "motor_right": {
+            "peak_accel_g": 10.133,
+            "at_rpm": 3177.9,
+            "limit_g": null,
+            "status": "ok"
+          },
+          "camera": {
+            "peak_accel_g": 3.497,
+            "at_rpm": 3177.9,
+            "limit_g": 0.5,
+            "status": "critical"
+          },
+          "imu": {
+            "peak_accel_g": 2.251,
+            "at_rpm": 3177.9,
+            "limit_g": 1.0,
+            "status": "critical"
+          },
+          "battery_center": {
+            "peak_accel_g": 2.473,
+            "at_rpm": 3177.9,
+            "limit_g": null,
+            "status": "ok"
+          }
+        },
+        "max_stress_ratio": 0.0419,
+        "n_resonance_findings": 2,
+        "robust_worst_case": null,
+        "rom_vs_full_discrepancy_pct": null,
+        "mass_added_kg": 0.0
+      },
+      "metrics_after": {
+        "components": {
+          "motor_left": {
+            "peak_accel_g": 3.718,
+            "at_rpm": 12000.0,
+            "limit_g": null,
+            "status": "ok"
+          },
+          "motor_right": {
+            "peak_accel_g": 3.717,
+            "at_rpm": 12000.0,
+            "limit_g": null,
+            "status": "ok"
+          },
+          "camera": {
+            "peak_accel_g": 0.487,
+            "at_rpm": 3453.6,
+            "limit_g": 0.5,
+            "status": "warning"
+          },
+          "imu": {
+            "peak_accel_g": 0.802,
+            "at_rpm": 3481.2,
+            "limit_g": 1.0,
+            "status": "warning"
+          },
+          "battery_center": {
+            "peak_accel_g": 0.868,
+            "at_rpm": 3481.2,
+            "limit_g": null,
+            "status": "ok"
+          }
+        },
+        "max_stress_ratio": 0.0082,
+        "n_resonance_findings": 2,
+        "robust_worst_case": 0.992,
+        "rom_vs_full_discrepancy_pct": 23.69,
+        "mass_added_kg": 0.0
+      },
+      "reduction_pct": 77.07,
+      "robust_worst_case_after": 0.992,
+      "verified": true,
+      "findings": [
+        {
+          "id": "f1",
+          "severity": "critical",
+          "type": "resonance",
+          "component": "motor_left, motor_right",
+          "rpm": 2251.1,
+          "value": 0.0,
+          "limit": null,
+          "mode": 3,
+          "mode_f_hz": 37.52,
+          "position": {
+            "member": "m1",
+            "s": 0.0
+          },
+          "detail": "1x excitation from 'motor_left' and 'motor_right' at 2251 RPM (37.5 Hz) is within 0.0% of mode 3 (37.5 Hz)"
+        },
+        {
+          "id": "f2",
+          "severity": "critical",
+          "type": "resonance",
+          "component": "motor_left, motor_right",
+          "rpm": 3582.7,
+          "value": 0.0,
+          "limit": null,
+          "mode": 5,
+          "mode_f_hz": 59.71,
+          "position": {
+            "member": "m1",
+            "s": 0.0
+          },
+          "detail": "1x excitation from 'motor_left' and 'motor_right' at 3583 RPM (59.7 Hz) is within 0.0% of mode 5 (59.7 Hz)"
+        },
+        {
+          "id": "f3",
+          "severity": "warning",
+          "type": "mount_amplification",
+          "component": "motor_left, motor_right, camera, imu",
+          "rpm": null,
+          "value": 32.9,
+          "limit": 46.6,
+          "mode": null,
+          "mode_f_hz": null,
+          "position": {
+            "member": "m1",
+            "s": 0.0
+          },
+          "detail": "Mount frequencies for motor_left (214.6 Hz), motor_right (214.6 Hz), camera (32.9 Hz), imu (490.7 Hz) sit in vibration amplification zones (r < sqrt(2)) within the operating range"
+        },
+        {
+          "id": "f4",
+          "severity": "warning",
+          "type": "limit_exceeded",
+          "component": "imu",
+          "rpm": 3481.2,
+          "value": 0.802,
+          "limit": 1.0,
+          "mode": 5,
+          "mode_f_hz": 59.71,
+          "position": {
+            "member": "m1",
+            "s": 0.85
+          },
+          "detail": "Component 'imu' peak acceleration 0.80 g RMS at 3481 RPM exceeds limit 1.00 g RMS (excitation is 0.97x of mode 5 at 59.7 Hz)"
+        },
+        {
+          "id": "f5",
+          "severity": "warning",
+          "type": "limit_exceeded",
+          "component": "camera",
+          "rpm": 3453.6,
+          "value": 0.487,
+          "limit": 0.5,
+          "mode": 5,
+          "mode_f_hz": 59.71,
+          "position": {
+            "member": "m2",
+            "s": 0.15
+          },
+          "detail": "Component 'camera' peak acceleration 0.49 g RMS at 3454 RPM exceeds limit 0.50 g RMS (excitation is 0.96x of mode 5 at 59.7 Hz)"
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "label": "Damping only",
+      "changes": [
+        {
+          "path": "components.camera.mount.zeta",
+          "from": 0.15,
+          "to": 0.296,
+          "label": "Camera mount damping ratio 0.15 -> 0.30"
+        },
+        {
+          "path": "components.imu.mount.zeta",
+          "from": 0.2,
+          "to": 0.057,
+          "label": "Imu mount damping ratio 0.20 -> 0.06"
+        }
+      ],
+      "design": {
+        "name": "Quad_Drone_Diagonal",
+        "plane": "xy",
+        "nodes": [
+          {
+            "id": "n1",
+            "x": -0.15,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "id": "n2",
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "id": "n3",
+            "x": 0.15,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ],
+        "members": [
+          {
+            "id": "m1",
+            "n1": "n1",
+            "n2": "n2",
+            "material": "cfrp",
+            "section": {
+              "type": "rect",
+              "w": 0.016,
+              "h": 0.004
+            }
+          },
+          {
+            "id": "m2",
+            "n1": "n2",
+            "n2": "n3",
+            "material": "cfrp",
+            "section": {
+              "type": "rect",
+              "w": 0.016,
+              "h": 0.004
+            }
+          }
+        ],
+        "supports": [
+          {
+            "node": "n2",
+            "type": "spring",
+            "kx": 2000.0,
+            "ky": 2000.0,
+            "kr": 5.0
+          }
+        ],
+        "components": [
+          {
+            "id": "motor_left",
+            "kind": "motor",
+            "member": "m1",
+            "s": 0.0,
+            "mass": 0.055,
+            "mount": {
+              "preset": "rubber_medium",
+              "kv": 100000.0,
+              "zeta": 0.08
+            },
+            "excitation": {
+              "type": "unbalance",
+              "rpm_min": 1000.0,
+              "rpm_max": 12000.0,
+              "me": 1.8e-06,
+              "orders": [
+                1.0
+              ],
+              "blades": 2
+            },
+            "limit_g": null
+          },
+          {
+            "id": "motor_right",
+            "kind": "motor",
+            "member": "m2",
+            "s": 1.0,
+            "mass": 0.055,
+            "mount": {
+              "preset": "rubber_medium",
+              "kv": 100000.0,
+              "zeta": 0.08
+            },
+            "excitation": {
+              "type": "unbalance",
+              "rpm_min": 1000.0,
+              "rpm_max": 12000.0,
+              "me": 1.8e-06,
+              "orders": [
+                1.0
+              ],
+              "blades": 2
+            },
+            "limit_g": null
+          },
+          {
+            "id": "camera",
+            "kind": "camera",
+            "member": "m2",
+            "s": 0.15,
+            "mass": 0.15,
+            "mount": {
+              "preset": "silicone_gel",
+              "kv": 40000.0,
+              "zeta": 0.29583812003506066
+            },
+            "excitation": null,
+            "limit_g": 0.5
+          },
+          {
+            "id": "imu",
+            "kind": "gyro",
+            "member": "m1",
+            "s": 0.85,
+            "mass": 0.005,
+            "mount": {
+              "preset": "foam",
+              "kv": 10000.0,
+              "zeta": 0.056772434915433725
+            },
+            "excitation": null,
+            "limit_g": 1.0
+          },
+          {
+            "id": "battery_center",
+            "kind": "battery",
+            "member": "m1",
+            "s": 1.0,
+            "mass": 0.25,
+            "mount": {
+              "preset": "rigid",
+              "kv": 100000000.0,
+              "zeta": 0.01
+            },
+            "excitation": null,
+            "limit_g": null
+          }
+        ],
+        "analysis": {
+          "rpm_min": 1000.0,
+          "rpm_max": 12000.0,
+          "n_points": 400,
+          "beam_zeta": 0.02,
+          "n_elements_per_member": 20
+        }
+      },
+      "metrics_before": {
+        "components": {
+          "motor_left": {
+            "peak_accel_g": 8.824,
+            "at_rpm": 3177.9,
+            "limit_g": null,
+            "status": "ok"
+          },
+          "motor_right": {
+            "peak_accel_g": 10.133,
+            "at_rpm": 3177.9,
+            "limit_g": null,
+            "status": "ok"
+          },
+          "camera": {
+            "peak_accel_g": 3.497,
+            "at_rpm": 3177.9,
+            "limit_g": 0.5,
+            "status": "critical"
+          },
+          "imu": {
+            "peak_accel_g": 2.251,
+            "at_rpm": 3177.9,
+            "limit_g": 1.0,
+            "status": "critical"
+          },
+          "battery_center": {
+            "peak_accel_g": 2.473,
+            "at_rpm": 3177.9,
+            "limit_g": null,
+            "status": "ok"
+          }
+        },
+        "max_stress_ratio": 0.0419,
+        "n_resonance_findings": 2,
+        "robust_worst_case": null,
+        "rom_vs_full_discrepancy_pct": null,
+        "mass_added_kg": 0.0
+      },
+      "metrics_after": {
+        "components": {
+          "motor_left": {
+            "peak_accel_g": 6.927,
+            "at_rpm": 3205.5,
+            "limit_g": null,
+            "status": "ok"
+          },
+          "motor_right": {
+            "peak_accel_g": 7.899,
+            "at_rpm": 3205.5,
+            "limit_g": null,
+            "status": "ok"
+          },
+          "camera": {
+            "peak_accel_g": 2.608,
+            "at_rpm": 3205.5,
+            "limit_g": 0.5,
+            "status": "critical"
+          },
+          "imu": {
+            "peak_accel_g": 1.797,
+            "at_rpm": 3205.5,
+            "limit_g": 1.0,
+            "status": "critical"
+          },
+          "battery_center": {
+            "peak_accel_g": 1.969,
+            "at_rpm": 3205.5,
+            "limit_g": null,
+            "status": "ok"
+          }
+        },
+        "max_stress_ratio": 0.0324,
+        "n_resonance_findings": 2,
+        "robust_worst_case": 2.608,
+        "rom_vs_full_discrepancy_pct": 0.08,
+        "mass_added_kg": 0.0
+      },
+      "reduction_pct": 25.42,
+      "robust_worst_case_after": 2.608,
+      "verified": true,
+      "findings": [
+        {
+          "id": "f1",
+          "severity": "critical",
+          "type": "limit_exceeded",
+          "component": "camera",
+          "rpm": 3205.5,
+          "value": 2.608,
+          "limit": 0.5,
+          "mode": 4,
+          "mode_f_hz": 53.09,
+          "position": {
+            "member": "m2",
+            "s": 0.15
+          },
+          "detail": "Component 'camera' peak acceleration 2.61 g RMS at 3206 RPM exceeds limit 0.50 g RMS (excitation is 1.01x of mode 4 at 53.1 Hz)"
+        },
+        {
+          "id": "f2",
+          "severity": "critical",
+          "type": "limit_exceeded",
+          "component": "imu",
+          "rpm": 3205.5,
+          "value": 1.797,
+          "limit": 1.0,
+          "mode": 4,
+          "mode_f_hz": 53.09,
+          "position": {
+            "member": "m1",
+            "s": 0.85
+          },
+          "detail": "Component 'imu' peak acceleration 1.80 g RMS at 3206 RPM exceeds limit 1.00 g RMS (excitation is 1.01x of mode 4 at 53.1 Hz)"
+        },
+        {
+          "id": "f3",
+          "severity": "critical",
+          "type": "resonance",
+          "component": "motor_left, motor_right",
+          "rpm": 3185.1,
+          "value": 0.0,
+          "limit": null,
+          "mode": 4,
+          "mode_f_hz": 53.09,
+          "position": {
+            "member": "m1",
+            "s": 0.0
+          },
+          "detail": "1x excitation from 'motor_left' and 'motor_right' at 3185 RPM (53.1 Hz) is within 0.0% of mode 4 (53.1 Hz)"
+        },
+        {
+          "id": "f4",
+          "severity": "critical",
+          "type": "resonance",
+          "component": "motor_left, motor_right",
+          "rpm": 6067.3,
+          "value": 0.0,
+          "limit": null,
+          "mode": 5,
+          "mode_f_hz": 101.12,
+          "position": {
+            "member": "m1",
+            "s": 0.85
+          },
+          "detail": "1x excitation from 'motor_left' and 'motor_right' at 6067 RPM (101.1 Hz) is within 0.0% of mode 5 (101.1 Hz)"
+        },
+        {
+          "id": "f5",
+          "severity": "warning",
+          "type": "mount_amplification",
+          "component": "motor_left, motor_right, camera, imu",
+          "rpm": null,
+          "value": 82.2,
+          "limit": 116.2,
+          "mode": null,
+          "mode_f_hz": null,
+          "position": {
+            "member": "m1",
+            "s": 0.0
+          },
+          "detail": "Mount frequencies for motor_left (214.6 Hz), motor_right (214.6 Hz), camera (82.2 Hz), imu (225.1 Hz) sit in vibration amplification zones (r < sqrt(2)) within the operating range"
+        }
+      ]
+    }
+  ],
+  "best_index": 0,
+  "solve_ms": 11254.81,
+  "evaluations": 96,
+  "note": "Optimization successful: all candidates verified with direct full solver."
+}

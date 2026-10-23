@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+numpy
+scipy
+pydantic>=2
+httpx
+python-dotenv
+pytest
+threadpoolctl

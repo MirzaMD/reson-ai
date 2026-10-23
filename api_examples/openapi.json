@@ -1,0 +1,2105 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ResonAI Solver Backend",
+    "description": "Pre-FEM vibration triage simulator for beam/frame structures with vibrating components.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/presets": {
+      "get": {
+        "summary": "Presets",
+        "operationId": "presets_presets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Presets Presets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/presets/{name}/design": {
+      "get": {
+        "summary": "Preset Design",
+        "description": "Return fully specified preset design model by name.",
+        "operationId": "preset_design_presets__name__design_get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Preset Design Presets  Name  Design Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/validate": {
+      "get": {
+        "summary": "Validate Get",
+        "description": "Return solver validation report and benchmark performance.",
+        "operationId": "validate_get_validate_get",
+        "parameters": [
+          {
+            "name": "refresh",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Refresh"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Validate Get Validate Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Validate Post",
+        "description": "Execute/retrieve solver validation report (per 00_MASTER_CONTEXT.md 6.5).",
+        "operationId": "validate_post_validate_post",
+        "parameters": [
+          {
+            "name": "refresh",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Refresh"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Validate Post Validate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyze": {
+      "post": {
+        "summary": "Analyze",
+        "description": "Execute real reduced-order vibration analysis on the provided design.",
+        "operationId": "analyze_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesignModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyze/mock": {
+      "post": {
+        "summary": "Analyze Mock",
+        "description": "Return pre-computed contract-compliant mock response for frontend development.",
+        "operationId": "analyze_mock_analyze_mock_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/response_at": {
+      "post": {
+        "summary": "Response At",
+        "description": "Compute complex harmonic response at a single specified RPM for animation.",
+        "operationId": "response_at_response_at_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponseAtRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseAtResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/optimize": {
+      "post": {
+        "summary": "Optimize",
+        "description": "Optimize component mounts and positions to minimize sensor vibrations.",
+        "operationId": "optimize_optimize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptimizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/chat": {
+      "post": {
+        "summary": "Agent Chat Endpoint",
+        "description": "Conversational engineering assistant for structural dynamics design and vibration triage.",
+        "operationId": "agent_chat_endpoint_agent_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/health": {
+      "get": {
+        "summary": "Agent Health Endpoint",
+        "description": "Check if LLM provider key and model are configured (booleans only, never exposes keys).",
+        "operationId": "agent_health_endpoint_agent_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentChatRequest": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "description": "One of build, continue, fix, explain",
+            "default": "continue"
+          },
+          "design": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Design",
+            "description": "Current structure design"
+          },
+          "analysis": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis",
+            "description": "Latest analysis result"
+          },
+          "candidates": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidates",
+            "description": "Latest optimization candidates"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "title": "Messages",
+            "description": "Chat messages history"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "AgentChatRequest"
+      },
+      "AgentChatResponse": {
+        "properties": {
+          "assistant_message": {
+            "type": "string",
+            "title": "Assistant Message"
+          },
+          "ops": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Ops"
+          },
+          "op_descriptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Op Descriptions"
+          },
+          "design": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Design"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "clarifying_question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clarifying Question"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "'llm', 'cache', or 'fallback'"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "assistant_message",
+          "design",
+          "source"
+        ],
+        "title": "AgentChatResponse"
+      },
+      "AgentHealthResponse": {
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          },
+          "model_configured": {
+            "type": "boolean",
+            "title": "Model Configured"
+          }
+        },
+        "type": "object",
+        "required": [
+          "configured",
+          "model_configured"
+        ],
+        "title": "AgentHealthResponse"
+      },
+      "AnalysisConfigModel": {
+        "properties": {
+          "rpm_min": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Rpm Min",
+            "default": 500.0
+          },
+          "rpm_max": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Rpm Max",
+            "default": 12000.0
+          },
+          "n_points": {
+            "type": "integer",
+            "minimum": 10.0,
+            "title": "N Points",
+            "default": 400
+          },
+          "beam_zeta": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Beam Zeta",
+            "default": 0.02
+          },
+          "n_elements_per_member": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "N Elements Per Member",
+            "default": 20
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "AnalysisConfigModel"
+      },
+      "AnalysisMeta": {
+        "properties": {
+          "n_dof": {
+            "type": "integer",
+            "title": "N Dof"
+          },
+          "n_modes_kept": {
+            "type": "integer",
+            "title": "N Modes Kept"
+          },
+          "solve_ms": {
+            "type": "number",
+            "title": "Solve Ms"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method",
+            "default": "rom"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "n_dof",
+          "n_modes_kept",
+          "solve_ms"
+        ],
+        "title": "AnalysisMeta"
+      },
+      "AnalyzeResponse": {
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/AnalysisMeta"
+          },
+          "mesh_nodes": {
+            "items": {
+              "$ref": "#/components/schemas/MeshNode"
+            },
+            "type": "array",
+            "title": "Mesh Nodes"
+          },
+          "modes": {
+            "items": {
+              "$ref": "#/components/schemas/ModeInfo"
+            },
+            "type": "array",
+            "title": "Modes"
+          },
+          "sweep": {
+            "$ref": "#/components/schemas/SweepResult"
+          },
+          "campbell": {
+            "$ref": "#/components/schemas/CampbellBlock"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentSummary"
+            },
+            "type": "array",
+            "title": "Components"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "max_stress_mpa": {
+            "$ref": "#/components/schemas/MaxStress"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "meta",
+          "mesh_nodes",
+          "modes",
+          "sweep",
+          "campbell",
+          "components",
+          "findings",
+          "max_stress_mpa"
+        ],
+        "title": "AnalyzeResponse"
+      },
+      "BoxSection": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "box",
+            "title": "Type"
+          },
+          "w": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "W",
+            "description": "Outer width in m"
+          },
+          "h": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "H",
+            "description": "Outer height in m"
+          },
+          "t": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "T",
+            "description": "Wall thickness in m"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "type",
+          "w",
+          "h",
+          "t"
+        ],
+        "title": "BoxSection"
+      },
+      "BudgetModel": {
+        "properties": {
+          "max_evals": {
+            "type": "integer",
+            "minimum": 50.0,
+            "title": "Max Evals",
+            "default": 1200
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "BudgetModel"
+      },
+      "CampbellBlock": {
+        "properties": {
+          "mode_freqs_hz": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Mode Freqs Hz"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/CampbellLine"
+            },
+            "type": "array",
+            "title": "Lines"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "mode_freqs_hz",
+          "lines"
+        ],
+        "title": "CampbellBlock"
+      },
+      "CampbellLine": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "order": {
+            "type": "number",
+            "title": "Order"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "label",
+          "order"
+        ],
+        "title": "CampbellLine"
+      },
+      "CandidateBlock": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/ChangeItem"
+            },
+            "type": "array",
+            "title": "Changes"
+          },
+          "design": {
+            "$ref": "#/components/schemas/DesignModel"
+          },
+          "metrics_before": {
+            "$ref": "#/components/schemas/MetricsBlock"
+          },
+          "metrics_after": {
+            "$ref": "#/components/schemas/MetricsBlock"
+          },
+          "reduction_pct": {
+            "type": "number",
+            "title": "Reduction Pct"
+          },
+          "robust_worst_case_after": {
+            "type": "number",
+            "title": "Robust Worst Case After"
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified",
+            "default": true
+          },
+          "findings": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Finding"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Findings"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "rank",
+          "label",
+          "changes",
+          "design",
+          "metrics_before",
+          "metrics_after",
+          "reduction_pct",
+          "robust_worst_case_after"
+        ],
+        "title": "CandidateBlock"
+      },
+      "ChangeItem": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "from": {
+            "title": "From"
+          },
+          "to": {
+            "title": "To"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "path",
+          "from",
+          "to",
+          "label"
+        ],
+        "title": "ChangeItem"
+      },
+      "ChatMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage"
+      },
+      "CircSection": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "circ",
+            "title": "Type"
+          },
+          "d": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "D",
+            "description": "Diameter in m"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "type",
+          "d"
+        ],
+        "title": "CircSection"
+      },
+      "ComponentMetrics": {
+        "properties": {
+          "peak_accel_g": {
+            "type": "number",
+            "title": "Peak Accel G"
+          },
+          "at_rpm": {
+            "type": "number",
+            "title": "At Rpm"
+          },
+          "limit_g": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit G"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "peak_accel_g",
+          "at_rpm",
+          "status"
+        ],
+        "title": "ComponentMetrics"
+      },
+      "ComponentModel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "member": {
+            "type": "string",
+            "title": "Member"
+          },
+          "s": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "S",
+            "description": "Fraction along member from n1 to n2"
+          },
+          "mass": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Mass",
+            "description": "Lumped mass in kg"
+          },
+          "mount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MountModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "excitation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExcitationModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit_g": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit G",
+            "description": "Acceleration limit in g"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "member",
+          "s",
+          "mass"
+        ],
+        "title": "ComponentModel"
+      },
+      "ComponentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "uy": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Uy"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "uy"
+        ],
+        "title": "ComponentResponse"
+      },
+      "ComponentSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "peak_accel_g": {
+            "type": "number",
+            "title": "Peak Accel G"
+          },
+          "at_rpm": {
+            "type": "number",
+            "title": "At Rpm"
+          },
+          "limit_g": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit G"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warning",
+              "critical"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "peak_accel_g",
+          "at_rpm",
+          "status"
+        ],
+        "title": "ComponentSummary"
+      },
+      "DesignModel": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "default": "ResonAI Structure"
+          },
+          "plane": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plane",
+            "default": "xy"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/NodeModel"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberModel"
+            },
+            "type": "array",
+            "title": "Members"
+          },
+          "supports": {
+            "items": {
+              "$ref": "#/components/schemas/SupportModel"
+            },
+            "type": "array",
+            "title": "Supports"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentModel"
+            },
+            "type": "array",
+            "title": "Components"
+          },
+          "analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisConfigModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "nodes",
+          "members"
+        ],
+        "title": "DesignModel"
+      },
+      "ExcitationModel": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "unbalance",
+              "harmonic"
+            ],
+            "title": "Type",
+            "default": "unbalance"
+          },
+          "rpm_min": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm Min"
+          },
+          "rpm_max": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm Max"
+          },
+          "me": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Me",
+            "description": "Unbalance in kg*m"
+          },
+          "orders": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orders",
+            "default": [
+              1.0
+            ]
+          },
+          "blades": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blades"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "ExcitationModel"
+      },
+      "Finding": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warning",
+              "critical",
+              "info"
+            ],
+            "title": "Severity"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "component": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Component"
+          },
+          "rpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "mode_f_hz": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode F Hz"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PositionRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "severity",
+          "type",
+          "detail"
+        ],
+        "title": "Finding"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LocksModel": {
+        "properties": {
+          "positions": {
+            "type": "boolean",
+            "title": "Positions",
+            "default": false
+          },
+          "mounts": {
+            "type": "boolean",
+            "title": "Mounts",
+            "default": false
+          },
+          "damping": {
+            "type": "boolean",
+            "title": "Damping",
+            "default": false
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "LocksModel"
+      },
+      "MaxStress": {
+        "properties": {
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "member": {
+            "type": "string",
+            "title": "Member"
+          },
+          "at_rpm": {
+            "type": "number",
+            "title": "At Rpm"
+          },
+          "yield_mpa": {
+            "type": "number",
+            "title": "Yield Mpa"
+          },
+          "ratio": {
+            "type": "number",
+            "title": "Ratio"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "value",
+          "member",
+          "at_rpm",
+          "yield_mpa",
+          "ratio"
+        ],
+        "title": "MaxStress"
+      },
+      "MemberModel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "n1": {
+            "type": "string",
+            "title": "N1"
+          },
+          "n2": {
+            "type": "string",
+            "title": "N2"
+          },
+          "material": {
+            "type": "string",
+            "title": "Material"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RectSection"
+              },
+              {
+                "$ref": "#/components/schemas/CircSection"
+              },
+              {
+                "$ref": "#/components/schemas/TubeSection"
+              },
+              {
+                "$ref": "#/components/schemas/BoxSection"
+              }
+            ],
+            "title": "Section"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "n1",
+          "n2",
+          "material",
+          "section"
+        ],
+        "title": "MemberModel"
+      },
+      "MeshNode": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "x": {
+            "type": "number",
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "title": "Y"
+          },
+          "member": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member"
+          },
+          "s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "x",
+          "y"
+        ],
+        "title": "MeshNode"
+      },
+      "MetricsBlock": {
+        "properties": {
+          "components": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ComponentMetrics"
+            },
+            "type": "object",
+            "title": "Components"
+          },
+          "max_stress_ratio": {
+            "type": "number",
+            "title": "Max Stress Ratio"
+          },
+          "n_resonance_findings": {
+            "type": "integer",
+            "title": "N Resonance Findings"
+          },
+          "robust_worst_case": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Robust Worst Case"
+          },
+          "rom_vs_full_discrepancy_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rom Vs Full Discrepancy Pct"
+          },
+          "mass_added_kg": {
+            "type": "number",
+            "title": "Mass Added Kg",
+            "default": 0.0
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "components",
+          "max_stress_ratio",
+          "n_resonance_findings"
+        ],
+        "title": "MetricsBlock"
+      },
+      "ModeInfo": {
+        "properties": {
+          "i": {
+            "type": "integer",
+            "title": "I"
+          },
+          "f_hz": {
+            "type": "number",
+            "title": "F Hz"
+          },
+          "shape": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Shape"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "i",
+          "f_hz",
+          "shape"
+        ],
+        "title": "ModeInfo"
+      },
+      "MountModel": {
+        "properties": {
+          "preset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset"
+          },
+          "kv": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Kv",
+            "description": "Vertical stiffness in N/m"
+          },
+          "zeta": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Zeta",
+            "description": "Damping ratio"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "kv",
+          "zeta"
+        ],
+        "title": "MountModel"
+      },
+      "NodeModel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "x": {
+            "type": "number",
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "title": "Y"
+          },
+          "z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z",
+            "default": 0.0
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "x",
+          "y"
+        ],
+        "title": "NodeModel"
+      },
+      "NodeResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "ux": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Ux"
+          },
+          "uy": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Uy"
+          },
+          "rot": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Rot"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "ux",
+          "uy",
+          "rot"
+        ],
+        "title": "NodeResponse"
+      },
+      "OptimizeRequest": {
+        "properties": {
+          "design": {
+            "$ref": "#/components/schemas/DesignModel"
+          },
+          "locks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocksModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "objective": {
+            "type": "string",
+            "title": "Objective",
+            "default": "min_sensor_accel"
+          },
+          "budget": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BudgetModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed",
+            "default": 1
+          },
+          "movable": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Movable"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "design"
+        ],
+        "title": "OptimizeRequest"
+      },
+      "OptimizeResponse": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateBlock"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "best_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Index"
+          },
+          "solve_ms": {
+            "type": "number",
+            "title": "Solve Ms"
+          },
+          "evaluations": {
+            "type": "integer",
+            "title": "Evaluations"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "candidates",
+          "solve_ms",
+          "evaluations"
+        ],
+        "title": "OptimizeResponse"
+      },
+      "PositionRef": {
+        "properties": {
+          "member": {
+            "type": "string",
+            "title": "Member"
+          },
+          "s": {
+            "type": "number",
+            "title": "S"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "member",
+          "s"
+        ],
+        "title": "PositionRef"
+      },
+      "RectSection": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "rect",
+            "title": "Type"
+          },
+          "w": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "W",
+            "description": "Width in m"
+          },
+          "h": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "H",
+            "description": "Height / in-plane depth in m"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "type",
+          "w",
+          "h"
+        ],
+        "title": "RectSection"
+      },
+      "ResponseAtRequest": {
+        "properties": {
+          "design": {
+            "$ref": "#/components/schemas/DesignModel"
+          },
+          "rpm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Rpm",
+            "description": "Rotational speed in RPM"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "design",
+          "rpm"
+        ],
+        "title": "ResponseAtRequest"
+      },
+      "ResponseAtResponse": {
+        "properties": {
+          "rpm": {
+            "type": "number",
+            "title": "Rpm"
+          },
+          "omega": {
+            "type": "number",
+            "title": "Omega"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/NodeResponse"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentResponse"
+            },
+            "type": "array",
+            "title": "Components"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "rpm",
+          "omega",
+          "nodes",
+          "components"
+        ],
+        "title": "ResponseAtResponse"
+      },
+      "SupportModel": {
+        "properties": {
+          "node": {
+            "type": "string",
+            "title": "Node"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "pinned",
+              "roller",
+              "spring",
+              "free"
+            ],
+            "title": "Type"
+          },
+          "kx": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kx"
+          },
+          "ky": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ky"
+          },
+          "kr": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kr"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "node",
+          "type"
+        ],
+        "title": "SupportModel"
+      },
+      "SweepResult": {
+        "properties": {
+          "rpm": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Rpm"
+          },
+          "freq_hz": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Freq Hz"
+          },
+          "node_amp_mm": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Node Amp Mm"
+          },
+          "component_accel_g": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Component Accel G"
+          },
+          "component_disp_mm": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Component Disp Mm"
+          },
+          "transmitted_force_n": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Transmitted Force N"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "rpm",
+          "freq_hz",
+          "node_amp_mm",
+          "component_accel_g",
+          "component_disp_mm",
+          "transmitted_force_n"
+        ],
+        "title": "SweepResult"
+      },
+      "TubeSection": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "tube",
+            "title": "Type"
+          },
+          "d": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "D",
+            "description": "Outer diameter in m"
+          },
+          "t": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "T",
+            "description": "Wall thickness in m"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "type",
+          "d",
+          "t"
+        ],
+        "title": "TubeSection"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

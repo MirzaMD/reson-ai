@@ -1,0 +1,152 @@
+{
+  "design": {
+    "name": "Quad_Drone_Diagonal",
+    "plane": "xy",
+    "nodes": [
+      {
+        "id": "n1",
+        "x": -0.15,
+        "y": 0.0
+      },
+      {
+        "id": "n2",
+        "x": 0.0,
+        "y": 0.0
+      },
+      {
+        "id": "n3",
+        "x": 0.15,
+        "y": 0.0
+      }
+    ],
+    "members": [
+      {
+        "id": "m1",
+        "n1": "n1",
+        "n2": "n2",
+        "material": "cfrp",
+        "section": {
+          "type": "rect",
+          "w": 0.016,
+          "h": 0.004
+        }
+      },
+      {
+        "id": "m2",
+        "n1": "n2",
+        "n2": "n3",
+        "material": "cfrp",
+        "section": {
+          "type": "rect",
+          "w": 0.016,
+          "h": 0.004
+        }
+      }
+    ],
+    "supports": [
+      {
+        "node": "n2",
+        "type": "spring",
+        "kx": 2000.0,
+        "ky": 2000.0,
+        "kr": 5.0
+      }
+    ],
+    "components": [
+      {
+        "id": "motor_left",
+        "kind": "motor",
+        "member": "m1",
+        "s": 0.0,
+        "mass": 0.055,
+        "mount": {
+          "preset": "rubber_medium",
+          "kv": 100000.0,
+          "zeta": 0.08
+        },
+        "excitation": {
+          "type": "unbalance",
+          "rpm_min": 1000.0,
+          "rpm_max": 12000.0,
+          "me": 1.8e-06,
+          "orders": [
+            1.0
+          ],
+          "blades": 2
+        }
+      },
+      {
+        "id": "motor_right",
+        "kind": "motor",
+        "member": "m2",
+        "s": 1.0,
+        "mass": 0.055,
+        "mount": {
+          "preset": "rubber_medium",
+          "kv": 100000.0,
+          "zeta": 0.08
+        },
+        "excitation": {
+          "type": "unbalance",
+          "rpm_min": 1000.0,
+          "rpm_max": 12000.0,
+          "me": 1.8e-06,
+          "orders": [
+            1.0
+          ],
+          "blades": 2
+        }
+      },
+      {
+        "id": "camera",
+        "kind": "camera",
+        "member": "m2",
+        "s": 0.15,
+        "mass": 0.15,
+        "mount": {
+          "preset": "silicone_gel",
+          "kv": 40000.0,
+          "zeta": 0.15
+        },
+        "limit_g": 0.5
+      },
+      {
+        "id": "imu",
+        "kind": "gyro",
+        "member": "m1",
+        "s": 0.85,
+        "mass": 0.005,
+        "mount": {
+          "preset": "foam",
+          "kv": 10000.0,
+          "zeta": 0.2
+        },
+        "limit_g": 1.0
+      },
+      {
+        "id": "battery_center",
+        "kind": "battery",
+        "member": "m1",
+        "s": 1.0,
+        "mass": 0.25,
+        "mount": {
+          "preset": "rigid",
+          "kv": 100000000.0,
+          "zeta": 0.01
+        }
+      }
+    ],
+    "analysis": {
+      "rpm_min": 1000.0,
+      "rpm_max": 12000.0,
+      "n_points": 400,
+      "beam_zeta": 0.02,
+      "n_elements_per_member": 20
+    }
+  },
+  "objective": "min_sensor_accel",
+  "budget": {
+    "max_evals": 600
+  },
+  "seed": 1
+}

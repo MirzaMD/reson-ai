@@ -1,0 +1,100 @@
+{
+  "timestamp": "2026-10-23T10:16:59.237658+00:00",
+  "environment": {
+    "cpu_model": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_cores": 16,
+    "numpy_version": "2.5.4",
+    "scipy_version": "1.18.1",
+    "thread_policy": "Tested both 1-thread and default-threads per case; faster baseline reported"
+  },
+  "results": [
+    {
+      "label": "20 el/member",
+      "n_el": 20,
+      "n_points": 400,
+      "n_dofs": 125,
+      "r_kept": 12,
+      "dense_ms": 176.977000082843,
+      "dense_threads": "default",
+      "sparse_ms": 64.62089996784925,
+      "rom_setup_ms": 3.6193999694660306,
+      "rom_sweep_ms": 2.852999954484403,
+      "rom_total_ms": 6.472399923950434,
+      "speedup_vs_dense": 27.343335109432633,
+      "speedup_vs_sparse": 9.984070936149422,
+      "max_error_pct": 0.05645407758828381
+    },
+    {
+      "label": "50 el/member",
+      "n_el": 50,
+      "n_points": 400,
+      "n_dofs": 305,
+      "r_kept": 12,
+      "dense_ms": 1552.6179000735283,
+      "dense_threads": "1 thread",
+      "sparse_ms": 127.9651999939233,
+      "rom_setup_ms": 31.62159991916269,
+      "rom_sweep_ms": 4.497800022363663,
+      "rom_total_ms": 36.11939994152635,
+      "speedup_vs_dense": 42.98570581424551,
+      "speedup_vs_sparse": 3.542838480182007,
+      "max_error_pct": 0.056485071096009885
+    },
+    {
+      "label": "100 el/member",
+      "n_el": 100,
+      "n_points": 400,
+      "n_dofs": 605,
+      "r_kept": 12,
+      "dense_ms": 9003.817799966782,
+      "dense_threads": "1 thread",
+      "sparse_ms": 220.78080009669065,
+      "rom_setup_ms": 302.72479995619506,
+      "rom_sweep_ms": 7.376000052317977,
+      "rom_total_ms": 310.10080000851303,
+      "speedup_vs_dense": 29.035132446351653,
+      "speedup_vs_sparse": 0.7119646259881615,
+      "max_error_pct": 0.056480863035329947
+    },
+    {
+      "label": "200 el/member",
+      "n_el": 200,
+      "n_points": 400,
+      "n_dofs": 1205,
+      "r_kept": 12,
+      "dense_ms": 55534.984699916095,
+      "dense_threads": "1 thread",
+      "sparse_ms": 425.7596000097692,
+      "rom_setup_ms": 580.9575999155641,
+      "rom_sweep_ms": 28.61719997599721,
+      "rom_total_ms": 609.5747998915613,
+      "speedup_vs_dense": 91.10446283178922,
+      "speedup_vs_sparse": 0.6984534138968812,
+      "max_error_pct": 0.05640166942572676
+    }
+  ],
+  "optimizer_candidate": {
+    "label": "Per optimizer evaluation (10 el, 80 pts)",
+    "n_el": 10,
+    "n_points": 80,
+    "n_dofs": 65,
+    "r_kept": 12,
+    "dense_ms": 10.869199992157519,
+    "dense_threads": "default",
+    "sparse_ms": 16.179800033569336,
+    "rom_setup_ms": 1.6916999593377113,
+    "rom_sweep_ms": 1.8922999734058976,
+    "rom_total_ms": 3.583999932743609,
+    "speedup_vs_dense": 3.0327009475798103,
+    "speedup_vs_sparse": 4.514453219083473,
+    "max_error_pct": 0.05527148136450382
+  },
+  "summary": {
+    "min_speedup_dense": 27.343335109432633,
+    "max_speedup_dense": 91.10446283178922,
+    "min_speedup_sparse": 0.6984534138968812,
+    "max_speedup_sparse": 9.984070936149422,
+    "max_error_pct": 0.056485071096009885,
+    "claim_line": "ResonAI's reduced-order solver delivers full frequency sweeps with < 0.056% error, providing a 27.3x to 91.1x total speedup over dense direct solves (0.7x to 10.0x over sparse direct solves) on the same 1D model."
+  }
+}

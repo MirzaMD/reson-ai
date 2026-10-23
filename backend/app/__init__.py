@@ -1,0 +1,1 @@
+"""ResonAI backend application package."""

@@ -1,0 +1,177 @@
+{
+  "materials": {
+    "steel": {
+      "name": "Steel (Structural)",
+      "E": 200000000000.0,
+      "rho": 7850.0,
+      "yield_mpa": 250.0
+    },
+    "aluminium_6061": {
+      "name": "Aluminium 6061-T6",
+      "E": 69000000000.0,
+      "rho": 2700.0,
+      "yield_mpa": 240.0
+    },
+    "titanium": {
+      "name": "Titanium (Grade 5)",
+      "E": 110000000000.0,
+      "rho": 4500.0,
+      "yield_mpa": 880.0
+    },
+    "cfrp": {
+      "name": "CFRP Quasi-Isotropic",
+      "E": 70000000000.0,
+      "rho": 1600.0,
+      "yield_mpa": 600.0
+    },
+    "abs_plastic": {
+      "name": "ABS Plastic",
+      "E": 2300000000.0,
+      "rho": 1050.0,
+      "yield_mpa": 40.0
+    }
+  },
+  "mounts": {
+    "rubber_soft": {
+      "name": "Soft Rubber",
+      "kv": 20000.0,
+      "zeta": 0.1
+    },
+    "rubber_medium": {
+      "name": "Medium Rubber",
+      "kv": 100000.0,
+      "zeta": 0.08
+    },
+    "silicone_gel": {
+      "name": "Silicone Gel",
+      "kv": 50000.0,
+      "zeta": 0.15
+    },
+    "foam": {
+      "name": "Polyurethane Foam",
+      "kv": 10000.0,
+      "zeta": 0.2
+    },
+    "steel_spring": {
+      "name": "Steel Spring",
+      "kv": 50000.0,
+      "zeta": 0.005
+    },
+    "wire_rope": {
+      "name": "Wire Rope Isolator",
+      "kv": 80000.0,
+      "zeta": 0.12
+    },
+    "rigid": {
+      "name": "Rigid Mount",
+      "kv": 100000000.0,
+      "zeta": 0.01
+    }
+  },
+  "components": {
+    "motor": {
+      "name": "BLDC Motor (2212)",
+      "kind": "motor",
+      "mass": 0.055,
+      "mount": "rubber_medium",
+      "excitation": {
+        "type": "unbalance",
+        "rpm_min": 1000,
+        "rpm_max": 12000,
+        "me": 2e-06,
+        "orders": [
+          1
+        ],
+        "blades": 2
+      }
+    },
+    "fan": {
+      "name": "Cooling Fan",
+      "kind": "fan",
+      "mass": 0.1,
+      "mount": "rubber_soft",
+      "excitation": {
+        "type": "unbalance",
+        "rpm_min": 1000,
+        "rpm_max": 6000,
+        "me": 5e-06,
+        "orders": [
+          1
+        ],
+        "blades": 5
+      }
+    },
+    "pump": {
+      "name": "Fluid Pump",
+      "kind": "pump",
+      "mass": 0.8,
+      "mount": "rubber_medium",
+      "excitation": {
+        "type": "unbalance",
+        "rpm_min": 1500,
+        "rpm_max": 3500,
+        "me": 2e-05,
+        "orders": [
+          1
+        ]
+      }
+    },
+    "compressor": {
+      "name": "Mini Compressor",
+      "kind": "compressor",
+      "mass": 3.0,
+      "mount": "wire_rope",
+      "excitation": {
+        "type": "unbalance",
+        "rpm_min": 1000,
+        "rpm_max": 3000,
+        "me": 0.0001,
+        "orders": [
+          1
+        ]
+      }
+    },
+    "camera": {
+      "name": "Payload Camera / Sensor",
+      "kind": "camera",
+      "mass": 0.15,
+      "mount": "silicone_gel",
+      "limit_g": 0.5
+    },
+    "gyro": {
+      "name": "IMU / Gyroscope",
+      "kind": "gyro",
+      "mass": 0.005,
+      "mount": "foam",
+      "limit_g": 1.0
+    },
+    "flight_controller": {
+      "name": "Flight Controller PCB",
+      "kind": "flight_controller",
+      "mass": 0.03,
+      "mount": "silicone_gel",
+      "limit_g": 1.0
+    },
+    "battery": {
+      "name": "LiPo Battery Pack",
+      "kind": "battery",
+      "mass": 0.25,
+      "mount": "rigid"
+    },
+    "generic_mass": {
+      "name": "Generic Lumped Mass",
+      "kind": "generic_mass",
+      "mass": 0.1,
+      "mount": "rigid"
+    }
+  },
+  "structures": [
+    "quad_drone_diagonal",
+    "simply_supported_beam",
+    "cantilever",
+    "fixed_fixed",
+    "l_frame",
+    "portal_frame",
+    "box_frame"
+  ]
+}

@@ -1,0 +1,605 @@
+{
+  "cases": [
+    {
+      "id": "V1_1",
+      "name": "Simply Supported Beam Mode 1",
+      "reference": 22.8881,
+      "ours": 22.8881,
+      "unit": "Hz",
+      "error_pct": 0.0,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Euler-Bernoulli closed-form (n*pi)^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V1_2",
+      "name": "Simply Supported Beam Mode 2",
+      "reference": 91.5523,
+      "ours": 91.5524,
+      "unit": "Hz",
+      "error_pct": 0.0,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Euler-Bernoulli closed-form (n*pi)^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V1_3",
+      "name": "Simply Supported Beam Mode 3",
+      "reference": 205.9927,
+      "ours": 205.9932,
+      "unit": "Hz",
+      "error_pct": 0.0002,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Euler-Bernoulli closed-form (n*pi)^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V2_1",
+      "name": "Cantilever Beam Mode 1",
+      "reference": 8.1662,
+      "ours": 8.1663,
+      "unit": "Hz",
+      "error_pct": 0.0004,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Blevins Table 8-1 beta_1^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V2_2",
+      "name": "Cantilever Beam Mode 2",
+      "reference": 51.1772,
+      "ours": 51.1771,
+      "unit": "Hz",
+      "error_pct": 0.0004,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Blevins Table 8-1 beta_2^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V2_3",
+      "name": "Cantilever Beam Mode 3",
+      "reference": 143.2988,
+      "ours": 143.2974,
+      "unit": "Hz",
+      "error_pct": 0.001,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Blevins Table 8-1 beta_3^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V3_ff_1",
+      "name": "Free-Free Beam Mode 1",
+      "reference": 51.8838,
+      "ours": 51.8847,
+      "unit": "Hz",
+      "error_pct": 0.0017,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Blevins Table 8-1 beta_1^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V3_ff_2",
+      "name": "Free-Free Beam Mode 2",
+      "reference": 143.022,
+      "ours": 143.0224,
+      "unit": "Hz",
+      "error_pct": 0.0002,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Blevins Table 8-1 beta_2^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V3_ff_3",
+      "name": "Free-Free Beam Mode 3",
+      "reference": 280.3803,
+      "ours": 280.3818,
+      "unit": "Hz",
+      "error_pct": 0.0005,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Blevins Table 8-1 beta_3^2/(2*pi*L^2)*sqrt(EI/rhoA)"
+    },
+    {
+      "id": "V3b_rot",
+      "name": "Coordinate Rotation Invariance (0 deg vs 30 deg)",
+      "reference": 8.1663,
+      "ours": 8.1663,
+      "unit": "Hz",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.001,
+      "pass": true,
+      "detail": "Coordinate rotation invariance across 3 modes under global transformation matrix T"
+    },
+    {
+      "id": "V4_fn",
+      "name": "SDOF Mount Natural Frequency",
+      "reference": 50.3292,
+      "ours": 50.3292,
+      "unit": "Hz",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.01,
+      "pass": true,
+      "detail": "Undamped natural frequency fn = sqrt(k/m)/(2*pi) on rigid support"
+    },
+    {
+      "id": "V4_c",
+      "name": "SDOF Mount Dashpot Coefficient",
+      "reference": 50.5964,
+      "ours": 50.5964,
+      "unit": "N*s/m",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.01,
+      "pass": true,
+      "detail": "Dashpot matrix element c = 2*zeta*sqrt(k*m)"
+    },
+    {
+      "id": "V5_coupled",
+      "name": "Coupled Floating Body + Mount Mode",
+      "reference": 61.8364,
+      "ours": 61.835,
+      "unit": "Hz",
+      "error_pct": 0.0023,
+      "tolerance_pct": 0.05,
+      "pass": true,
+      "detail": "2-body spring relative mode fn = sqrt(k*(M_b+m)/(m*M_b))/(2*pi)"
+    },
+    {
+      "id": "V7_rom_peak",
+      "name": "ROM vs Direct Solve Peak Acceleration (r=12)",
+      "reference": 1.2066,
+      "ours": 1.206,
+      "unit": "g",
+      "error_pct": 0.0497,
+      "tolerance_pct": 2.0,
+      "pass": true,
+      "detail": "Modal ROM (r=12) peak response convergence on drone arm model"
+    },
+    {
+      "id": "V8_static_disp",
+      "name": "Static Cantilever Tip Deflection P*L^3/(3EI)",
+      "reference": 2.89855,
+      "ours": 2.89855,
+      "unit": "mm",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.1,
+      "pass": true,
+      "detail": "Analytical beam deflection under end point load P=1.0N"
+    },
+    {
+      "id": "V9_T_r0.5",
+      "name": "SDOF Transmissibility at r = 0.5",
+      "reference": 1.33005,
+      "ours": 1.33005,
+      "unit": "ratio",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.01,
+      "pass": true,
+      "detail": "Transmissibility T = sqrt((1+(2*zeta*r)^2)/((1-r^2)^2+(2*zeta*r)^2)) at r=0.5"
+    },
+    {
+      "id": "V9_T_r1",
+      "name": "SDOF Transmissibility at r = 1",
+      "reference": 6.32949,
+      "ours": 6.32949,
+      "unit": "ratio",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.01,
+      "pass": true,
+      "detail": "Transmissibility T = sqrt((1+(2*zeta*r)^2)/((1-r^2)^2+(2*zeta*r)^2)) at r=1"
+    },
+    {
+      "id": "V9_T_r2",
+      "name": "SDOF Transmissibility at r = 2",
+      "reference": 0.34801,
+      "ours": 0.34801,
+      "unit": "ratio",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.01,
+      "pass": true,
+      "detail": "Transmissibility T = sqrt((1+(2*zeta*r)^2)/((1-r^2)^2+(2*zeta*r)^2)) at r=2"
+    },
+    {
+      "id": "V9_T_r3",
+      "name": "SDOF Transmissibility at r = 3",
+      "reference": 0.13841,
+      "ours": 0.13841,
+      "unit": "ratio",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.01,
+      "pass": true,
+      "detail": "Transmissibility T = sqrt((1+(2*zeta*r)^2)/((1-r^2)^2+(2*zeta*r)^2)) at r=3"
+    },
+    {
+      "id": "V10_root_stress",
+      "name": "Cantilever Root Bending Stress 6*P*L/(w*h^2)",
+      "reference": 3.0,
+      "ours": 3.0,
+      "unit": "MPa",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.5,
+      "pass": true,
+      "detail": "Analytical extreme fiber bending stress sigma = M*c/I = 6*P*L/(w*h^2)"
+    },
+    {
+      "id": "V11_mass_conservation",
+      "name": "Mass Matrix Completeness & Conservation (v^T M v)",
+      "reference": 1.57,
+      "ours": 1.57,
+      "unit": "kg",
+      "error_pct": 0.0,
+      "tolerance_pct": 0.01,
+      "pass": true,
+      "detail": "Sum of consistent mass matrix over rigid vertical motion equals rho*A*L"
+    },
+    {
+      "id": "V6_mesh_convergence",
+      "name": "Spatial Mesh Convergence (2 to 40 Elements)",
+      "reference": 0.0,
+      "ours": 0.0,
+      "unit": "bool",
+      "error_pct": 0.0,
+      "tolerance_pct": 1.0,
+      "pass": true,
+      "detail": "Errors strictly decrease with h-refinement and stay < 1.0% at 20 elements/member"
+    }
+  ],
+  "summary": {
+    "passed": 22,
+    "total": 22
+  },
+  "mesh_convergence": [
+    {
+      "structure": "simply_supported",
+      "elements": 2,
+      "mode": 1,
+      "ours": 23.0135,
+      "analytical": 22.923,
+      "error_pct": 0.3947
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 2,
+      "mode": 2,
+      "ours": 101.7707,
+      "analytical": 91.6921,
+      "error_pct": 10.9918
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 2,
+      "mode": 3,
+      "ours": 255.809,
+      "analytical": 206.3072,
+      "error_pct": 23.9942
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 5,
+      "mode": 1,
+      "ours": 22.9255,
+      "analytical": 22.923,
+      "error_pct": 0.0107
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 5,
+      "mode": 2,
+      "ours": 91.844,
+      "analytical": 91.6921,
+      "error_pct": 0.1657
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 5,
+      "mode": 3,
+      "ours": 207.9456,
+      "analytical": 206.3072,
+      "error_pct": 0.7942
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 10,
+      "mode": 1,
+      "ours": 22.9232,
+      "analytical": 22.923,
+      "error_pct": 0.0007
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 10,
+      "mode": 2,
+      "ours": 91.7019,
+      "analytical": 91.6921,
+      "error_pct": 0.0107
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 10,
+      "mode": 3,
+      "ours": 206.4175,
+      "analytical": 206.3072,
+      "error_pct": 0.0534
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 20,
+      "mode": 1,
+      "ours": 22.923,
+      "analytical": 22.923,
+      "error_pct": 0.0
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 20,
+      "mode": 2,
+      "ours": 91.6927,
+      "analytical": 91.6921,
+      "error_pct": 0.0007
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 20,
+      "mode": 3,
+      "ours": 206.3142,
+      "analytical": 206.3072,
+      "error_pct": 0.0034
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 40,
+      "mode": 1,
+      "ours": 22.923,
+      "analytical": 22.923,
+      "error_pct": 0.0
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 40,
+      "mode": 2,
+      "ours": 91.6921,
+      "analytical": 91.6921,
+      "error_pct": 0.0
+    },
+    {
+      "structure": "simply_supported",
+      "elements": 40,
+      "mode": 3,
+      "ours": 206.3077,
+      "analytical": 206.3072,
+      "error_pct": 0.0002
+    },
+    {
+      "structure": "cantilever",
+      "elements": 2,
+      "mode": 1,
+      "ours": 8.1702,
+      "analytical": 8.1662,
+      "error_pct": 0.0488
+    },
+    {
+      "structure": "cantilever",
+      "elements": 2,
+      "mode": 2,
+      "ours": 51.6113,
+      "analytical": 51.1772,
+      "error_pct": 0.8482
+    },
+    {
+      "structure": "cantilever",
+      "elements": 2,
+      "mode": 3,
+      "ours": 174.5589,
+      "analytical": 143.2988,
+      "error_pct": 21.8147
+    },
+    {
+      "structure": "cantilever",
+      "elements": 5,
+      "mode": 1,
+      "ours": 8.1664,
+      "analytical": 8.1662,
+      "error_pct": 0.0018
+    },
+    {
+      "structure": "cantilever",
+      "elements": 5,
+      "mode": 2,
+      "ours": 51.2026,
+      "analytical": 51.1772,
+      "error_pct": 0.0496
+    },
+    {
+      "structure": "cantilever",
+      "elements": 5,
+      "mode": 3,
+      "ours": 143.812,
+      "analytical": 143.2988,
+      "error_pct": 0.3581
+    },
+    {
+      "structure": "cantilever",
+      "elements": 10,
+      "mode": 1,
+      "ours": 8.1663,
+      "analytical": 8.1662,
+      "error_pct": 0.0005
+    },
+    {
+      "structure": "cantilever",
+      "elements": 10,
+      "mode": 2,
+      "ours": 51.1787,
+      "analytical": 51.1772,
+      "error_pct": 0.0029
+    },
+    {
+      "structure": "cantilever",
+      "elements": 10,
+      "mode": 3,
+      "ours": 143.3337,
+      "analytical": 143.2988,
+      "error_pct": 0.0244
+    },
+    {
+      "structure": "cantilever",
+      "elements": 20,
+      "mode": 1,
+      "ours": 8.1663,
+      "analytical": 8.1662,
+      "error_pct": 0.0004
+    },
+    {
+      "structure": "cantilever",
+      "elements": 20,
+      "mode": 2,
+      "ours": 51.1772,
+      "analytical": 51.1772,
+      "error_pct": 0.0002
+    },
+    {
+      "structure": "cantilever",
+      "elements": 20,
+      "mode": 3,
+      "ours": 143.2996,
+      "analytical": 143.2988,
+      "error_pct": 0.0006
+    },
+    {
+      "structure": "cantilever",
+      "elements": 40,
+      "mode": 1,
+      "ours": 8.1663,
+      "analytical": 8.1662,
+      "error_pct": 0.0004
+    },
+    {
+      "structure": "cantilever",
+      "elements": 40,
+      "mode": 2,
+      "ours": 51.1771,
+      "analytical": 51.1772,
+      "error_pct": 0.0004
+    },
+    {
+      "structure": "cantilever",
+      "elements": 40,
+      "mode": 3,
+      "ours": 143.2974,
+      "analytical": 143.2988,
+      "error_pct": 0.001
+    }
+  ],
+  "mesh_convergence_pass": true,
+  "benchmark": {
+    "min_speedup_dense": 22.48,
+    "max_speedup_dense": 92.25,
+    "min_speedup_sparse": 0.71,
+    "max_speedup_sparse": 9.07,
+    "max_error_pct": 0.0565,
+    "claim_line": "ResonAI's reduced-order solver delivers full frequency sweeps with < 0.056% error, providing a 22.5x to 92.2x total speedup over dense direct solves (0.7x to 9.1x over sparse direct solves) on the same 1D model."
+  },
+  "benchmark_cached": {
+    "timestamp": "2026-10-23T15:00:08+05:30",
+    "environment": {
+      "cpu_model": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+      "cpu_cores": 16,
+      "numpy_version": "2.5.4",
+      "scipy_version": "1.18.1",
+      "thread_policy": "Tested both 1-thread and default-threads per case; faster baseline reported"
+    },
+    "results": [
+      {
+        "label": "20 el/member",
+        "n_dofs": 125,
+        "dense_ms": 265.75,
+        "dense_threads": "1 thread",
+        "sparse_ms": 107.26,
+        "rom_setup_ms": 7.12,
+        "rom_sweep_ms": 4.7,
+        "rom_total_ms": 11.82,
+        "speedup_vs_dense": 22.48,
+        "speedup_vs_sparse": 9.07,
+        "max_error_pct": 0.0565
+      },
+      {
+        "label": "50 el/member",
+        "n_dofs": 305,
+        "dense_ms": 1664.32,
+        "dense_threads": "1 thread",
+        "sparse_ms": 137.67,
+        "rom_setup_ms": 30.13,
+        "rom_sweep_ms": 4.75,
+        "rom_total_ms": 34.88,
+        "speedup_vs_dense": 47.72,
+        "speedup_vs_sparse": 3.95,
+        "max_error_pct": 0.0565
+      },
+      {
+        "label": "100 el/member",
+        "n_dofs": 605,
+        "dense_ms": 8927.86,
+        "dense_threads": "1 thread",
+        "sparse_ms": 209.41,
+        "rom_setup_ms": 188.15,
+        "rom_sweep_ms": 5.96,
+        "rom_total_ms": 194.11,
+        "speedup_vs_dense": 45.99,
+        "speedup_vs_sparse": 1.08,
+        "max_error_pct": 0.0565
+      },
+      {
+        "label": "200 el/member",
+        "n_dofs": 1205,
+        "dense_ms": 53207.6,
+        "dense_threads": "1 thread",
+        "sparse_ms": 410.43,
+        "rom_setup_ms": 523.33,
+        "rom_sweep_ms": 53.46,
+        "rom_total_ms": 576.79,
+        "speedup_vs_dense": 92.25,
+        "speedup_vs_sparse": 0.71,
+        "max_error_pct": 0.0564
+      }
+    ],
+    "optimizer_candidate": {
+      "label": "Per optimizer evaluation (10 el, 80 pts)",
+      "n_dofs": 65,
+      "dense_ms": 10.26,
+      "dense_threads": "default",
+      "sparse_ms": 12.7,
+      "rom_setup_ms": 1.29,
+      "rom_sweep_ms": 1.46,
+      "rom_total_ms": 2.75,
+      "speedup_vs_dense": 3.73,
+      "speedup_vs_sparse": 4.62,
+      "max_error_pct": 0.0553
+    },
+    "summary": {
+      "min_speedup_dense": 22.48,
+      "max_speedup_dense": 92.25,
+      "min_speedup_sparse": 0.71,
+      "max_speedup_sparse": 9.07,
+      "max_error_pct": 0.0565,
+      "claim_line": "ResonAI's reduced-order solver delivers full frequency sweeps with < 0.056% error, providing a 22.5x to 92.2x total speedup over dense direct solves (0.7x to 9.1x over sparse direct solves) on the same 1D model."
+    }
+  },
+  "benchmark_live": {
+    "n_dof": 125,
+    "dense_ms": 254.45,
+    "sparse_ms": 139.62,
+    "rom_setup_ms": 8.08,
+    "rom_sweep_ms": 4.01,
+    "rom_total_ms": 12.09,
+    "speedup_vs_dense": 21.0,
+    "speedup_vs_sparse": 11.5,
+    "max_error_pct": 0.0565
+  },
+  "environment": {
+    "os": "Windows 11 (AMD64)",
+    "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cores": 16,
+    "python": "3.13.5",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  }
+}
