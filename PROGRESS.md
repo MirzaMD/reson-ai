@@ -1,8 +1,8 @@
 # PROGRESS (backend / Person 1)
 
 ## Status
-Current milestone: M8 (Complete - Production & Frontend Ready)
-Last updated: 2026-10-23 18:50 IST
+Current milestone: Frontend Layout & UX Cleanup (Phase 2 of 2) - Complete
+Last updated: 2026-10-23 22:35 IST
 
 ## Milestones
 - [x] M0 Skeleton: FastAPI, CORS, .env, presets, schemas, mock /analyze
@@ -16,6 +16,93 @@ Last updated: 2026-10-23 18:50 IST
 - [x] M6 Optimizer + /optimize (verified candidates)
 - [x] M7 Agent: ops, validator, Gemini provider, fallback, cache, /agent/chat
 - [x] M8 Hardening: perf, contract tests, drone demo tuning, frontend readiness
+- [x] Frontend Performance Fix (Phase 1): 60 FPS loop, InstancedMesh, Plotly memoization, granular selectors, response_at cache
+- [x] Frontend Layout & UX Cleanup (Phase 2): Light theme design tokens, Linear/Figma aesthetic, 48px top bar, 4-step workflow, 71.6% viewport share, focus mode
+
+## Milestone Frontend Layout & UX Cleanup (Phase 2) Summary
+### What Was Built & Files Touched
+- `frontend/app/globals.css`:
+  - Defined single light theme design tokens (`--color-canvas: #f6f8fa`, `--color-surface: #ffffff`, `--color-panel: #f0f3f6`, `--color-line: #d0d7de`, `--color-ink: #1f2328`, `--color-accent: #0284c7`, `--color-ok`, `--color-warn`, `--color-danger`).
+  - Standardized radii (6px/8px), spacing, and typography scale (12/13/14/16 px).
+  - Configured high-contrast accessible typography (4.5:1+ for muted text, 10:1+ for primary ink).
+- `frontend/components/layout/Toolbar.tsx`:
+  - 48 px compact top bar with ResonAI logo, preset picker, and 4-step workflow indicator (`Build` -> `Run` -> `Fix` -> `Compare`).
+  - Primary button hierarchy: Run (`btn-primary`), Auto-fix (`btn-secondary`), Compare toggle.
+  - Help popover with 3 key workflow tips (replacing beginner guide banner).
+  - API connectivity indicator dot with auto-check and retry action.
+- `frontend/components/layout/ModelTree.tsx`:
+  - 260 px Model panel default open in Build state, auto-collapsing to a 48 px icon rail after the first successful Run.
+  - Structure, materials, supports, and components with clean status pills.
+- `frontend/components/layout/RightDock.tsx`:
+  - 340 px dock with strictly ONE visible tab at a time (`Findings` | `Copilot` | `Details`).
+  - Default `Copilot` before first Run; default `Findings` after Run. Collapsible to a slim rail.
+- `frontend/components/layout/BottomTabs.tsx`:
+  - Collapsed 40 px bar displaying key readout (`camera: 1.84 g RMS (limit 1.80 g RMS) at 4,200 RPM — Critical`).
+  - Expands to 280 px on click; renders strictly the active tab (`Response` | `Campbell` | `Heatmap`).
+- `frontend/components/scene/SceneRoot.tsx`:
+  - Viewport overlays: status chips for sensitive components (top-left), view orientation buttons (top-right), floating RPM scrubber with live RPM/Hz readout (bottom-center).
+  - Focus mode: pressing `F` hides all panels, allocating 100% of the screen to the 3D canvas.
+  - Light studio background (`.viewport-bg`) and updated Colorbar legend without emojis.
+- `frontend/components/panels/FindingsPanel.tsx`:
+  - Cards ordered by severity with colored edge, one-line title, key numbers, text clamped to 3 lines with "More..." toggle, and "Show" button.
+  - Grouped info findings under a collapsed "Other notes" accordion.
+- `frontend/components/panels/ChatPanel.tsx`:
+  - Copilot chat with user/assistant bubbles, 3 quick-prompt chips, collapsible "Changes made" list, and fallback badge.
+- `frontend/components/panels/ComparePanel.tsx`:
+  - Slim summary strip under side-by-side viewports: camera before/after (`-66.3%`), stress ratio, tuned isolator list, and "Apply Fix" action.
+- `frontend/components/dialogs/`:
+  - `PresetGalleryModal.tsx`, `AddComponentModal.tsx`, `ValidationModal.tsx` styled with clean light theme tokens and zero emojis.
+- `frontend/components/ui/`:
+  - `ToastNotification.tsx`, `ErrorBanner.tsx` with retry button, `LoadingOverlay.tsx` with dynamic optimization stages, `StatusChip.tsx`.
+
+### Test & Contract Verification Results
+- `npm run check:contract`: PASSED (all 8 contract blocks strictly verified).
+- `npx tsc --noEmit`: PASSED (0 errors).
+- `npm run lint`: PASSED (0 errors, 0 warnings).
+- `npm run build`: PASSED (Next.js 16 Turbopack production build succeeded in 3.1s).
+- Viewport width share at 1366x768 in Results state: **71.6%** (Target ≥ 55% exceeded).
+
+### Exact Next Step
+Work is complete. Deliver report to user.
+
+## Milestone Frontend Performance Fix (Phase 1) Summary
+### What Was Built & Files Touched
+- `frontend/components/ui/PerfOverlay.tsx`: Dev-only performance overlay enabled via `?perf=1`, tracking React commits/sec and render time with React 19 `<Profiler>`.
+- `frontend/components/scene/animClock.ts`: Non-reactive animation clock module storing mutable `animClock.time` with optional throttled 10 Hz listener for HUD readouts.
+- `frontend/components/scene/SceneRoot.tsx`:
+  - `AnimationDriver` updates `animClock.time` in `useFrame` at 60 FPS without touching Zustand store, dropping React commits during animation from 60/s to 0/s.
+  - Three.js Canvas configuration: `dpr={[1, 1.5]}`, `powerPreference: "high-performance"`, `shadows={false}`, `frameloop={animating ? "always" : "demand"}`.
+  - Added 150 ms debounce (`useDebouncedRpm`), client-side `Map<number, ResponseAt>` caching, and `AbortController` cancellation for `/response_at`.
+- `frontend/components/scene/StructureView.tsx`:
+  - Replaced per-element meshes and heavy Drei `<Edges threshold={15}/>` passes with a single `THREE.InstancedMesh` (1 draw call) and a single merged `lineSegments` geometry.
+  - Zero heap allocations in `useFrame` via module-level pre-allocated scratch objects (`_tempVecA`, `_tempMat4`, etc.).
+  - Decoupled JET color contours from animation time; colors upload to GPU instanceColor only when RPM or analysis results change.
+- `frontend/components/scene/NodesView.tsx`:
+  - Migrated mesh nodes from individual sphere meshes to a single `InstancedMesh`.
+- `frontend/components/scene/Propeller.tsx`:
+  - Optimized offscreen canvas texture generation with memoization and `React.memo`.
+- `frontend/components/scene/ComponentModel.tsx` & `MountSpring.tsx`: Wrapped in `React.memo`.
+- `frontend/components/layout/BottomTabs.tsx`:
+  - Mounts only the currently active tab, eliminating background rendering and hidden layout calculations of inactive Plotly graphs.
+- `frontend/components/plots/FrfPlot.tsx`, `CampbellPlot.tsx`, `HeatmapPlot.tsx`:
+  - Decoupled curve data traces from `rpm` slider updates; static curves build strictly once per analysis sweep.
+  - Moved the vertical RPM indicator line into Plotly's `layout.shapes`.
+  - Added `useDeferredValue(rpm)` and wrapped with `React.memo`.
+- `frontend/app/page.tsx` & `frontend/components/layout/Toolbar.tsx`:
+  - Replaced whole-object `ui` subscriptions with atomic granular selectors (`s => s.ui.animating`, etc.).
+  - Initialized default hero drone by fetching `/presets/drone/design` from the backend API.
+- `frontend/lib/api/client.ts`: Added `AbortSignal` support to `responseAt()` and `request()`.
+- `frontend/lib/presets/presets.ts`: Synchronized `STRUCTURE_PRESETS[0]` with backend canonical CFRP drone design.
+- `PERF_REPORT.md`: Comprehensive benchmark and audit document with before/after table, step-by-step breakdown, and `?perf=1` inspection steps.
+
+### Test & Contract Verification Results
+- `npm run check:contract`: PASSED (all 8 contract blocks strictly verified).
+- `npx tsc --noEmit`: PASSED (0 errors).
+- `npm run lint`: PASSED (0 errors, 0 warnings).
+- `npm run build`: PASSED (Next.js 16 Turbopack production build succeeded).
+
+### Exact Next Step
+Proceed to Phase 2: Frontend Layout, Visual Polish, and UX refinement (or wait for user guidance).
 
 ## Milestone M8 Summary (Hardening & Frontend Readiness)
 ### Files Created / Touched
