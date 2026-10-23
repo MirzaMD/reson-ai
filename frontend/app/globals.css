@@ -1,0 +1,339 @@
+/* → replaces app/globals.css
+   Tailwind v4: one @import, and the theme lives here (no tailwind.config.ts).
+   Delete tailwind.config.ts, since v4 does not read it automatically. */
+@import "tailwindcss";
+
+/* ───────────── Theme tokens → utilities (bg-surface, text-ink, border-line …) ───────────── */
+@theme {
+  --color-canvas: #eef2f7; /* app background */
+  --color-surface: #ffffff; /* header, panels, cards */
+  --color-panel: #f7f9fc; /* tinted groups on a surface */
+  --color-sunken: #e8edf4; /* segmented-control tracks */
+  --color-line: #d5dde8; /* borders */
+  --color-line-subtle: #e3e9f1; /* dividers inside panels */
+
+  --color-ink: #0e1a2b; /* primary text */
+  --color-ink-2: #44546a; /* secondary text */
+  --color-muted: #5e6f86; /* hints (4.5:1+ on white) */
+
+  --color-accent: #0e7490; /* the one accent */
+  --color-accent-hover: #0c627a;
+  --color-accent-soft: #e0f2f7;
+  --color-accent-line: #9ccfdd;
+
+  --color-ok: #0f7b5f;
+  --color-ok-soft: #e0f5ee;
+  --color-warn: #b45309;
+  --color-warn-soft: #fef3e0;
+  --color-danger: #c62828;
+  --color-danger-soft: #fde8e8;
+}
+
+/* `inline` because these point at variables that next/font defines on <html> */
+@theme inline {
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+/* ───────────── Base ───────────── */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden; /* app-shell layout; panels scroll internally */
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* Tailwind v4 resets buttons to the default cursor */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Visible keyboard focus everywhere */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  input[type="range"]:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Form inputs (base layer, so utilities like px-2 / text-xs can override) */
+  input[type="number"],
+  input[type="text"],
+  select,
+  textarea {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+    color: var(--color-ink);
+    font-size: 13px;
+    padding: 6px 10px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-muted);
+  }
+  input[type="number"]:focus-visible,
+  input[type="text"]:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+
+  /* Range sliders with a filled track. Set --fill inline: style={{ "--fill": "40%" }} */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    height: 16px; /* comfortable hit area */
+    padding: 0;
+    border: 0;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      var(--color-accent) var(--fill, 0%),
+      var(--color-line) var(--fill, 0%)
+    );
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px; /* (track 4px − thumb 14px) / 2 */
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 2px solid var(--color-accent);
+    box-shadow: 0 1px 2px rgb(14 26 43 / 0.2);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--color-line);
+  }
+  input[type="range"]::-moz-range-progress {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--color-accent);
+  }
+  input[type="range"]::-moz-range-thumb {
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 2px solid var(--color-accent);
+    box-shadow: 0 1px 2px rgb(14 26 43 / 0.2);
+  }
+
+  /* Scrollbars (Firefox + WebKit) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted);
+    background-clip: content-box;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ───────────── Components (utilities can still override these) ───────────── */
+@layer components {
+  /* Radii: 8px for containers, 6px for controls. Nothing else. */
+  .panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 8px;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-line-subtle);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-ink-2);
+  }
+
+  /* Buttons: flat, one height, specific transitions */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* The ONE filled button on screen: the main action */
+  .btn-primary {
+    background: var(--color-accent);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
+
+  /* Important, but not primary */
+  .btn-secondary {
+    background: var(--color-surface);
+    border-color: var(--color-accent-line);
+    color: var(--color-accent);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-accent-soft);
+  }
+
+  /* Neutral + toggle (use aria-pressed for the "on" state) */
+  .btn-ghost {
+    background: var(--color-surface);
+    border-color: var(--color-line);
+    color: var(--color-ink-2);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-panel);
+    color: var(--color-ink);
+  }
+  .btn-ghost[aria-pressed="true"] {
+    background: var(--color-accent-soft);
+    border-color: var(--color-accent-line);
+    color: var(--color-accent);
+  }
+
+  .btn-success {
+    background: var(--color-ok);
+    color: #fff;
+  }
+  .btn-success:hover:not(:disabled) {
+    filter: brightness(0.92);
+  }
+  .btn-danger {
+    background: var(--color-danger);
+    color: #fff;
+  }
+  .btn-danger:hover:not(:disabled) {
+    filter: brightness(0.92);
+  }
+
+  /* Segmented icon group (view toggles, panel toggles) */
+  .seg {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    background: var(--color-sunken);
+    border-radius: 8px;
+  }
+  .seg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 8px;
+    border-radius: 6px;
+    color: var(--color-ink-2);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .seg-btn:hover {
+    color: var(--color-ink);
+  }
+  .seg-btn[aria-pressed="true"] {
+    background: var(--color-surface);
+    color: var(--color-accent);
+    box-shadow: 0 1px 2px rgb(14 26 43 / 0.12);
+  }
+
+  /* 3D viewport: pale, cool studio backdrop */
+  .viewport-bg {
+    background: radial-gradient(circle at 50% 40%, #ffffff 0%, #dde6f0 100%);
+  }
+
+  .glass-panel {
+    background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--color-line);
+  }
+
+  /* Chat bubbles */
+  .chat-user {
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-accent-line);
+  }
+  .chat-assistant {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line-subtle);
+  }
+
+  /* Severity indicators */
+  .finding-critical {
+    border-left: 3px solid var(--color-danger);
+  }
+  .finding-warning {
+    border-left: 3px solid var(--color-warn);
+  }
+  .finding-ok {
+    border-left: 3px solid var(--color-ok);
+  }
+}
+
+/* Plotly modebar */
+.js-plotly-plot .plotly .modebar {
+  top: 4px !important;
+  right: 4px !important;
+}
+.js-plotly-plot .plotly .modebar-btn path {
+  fill: var(--color-muted) !important;
+}
+.js-plotly-plot .plotly .modebar-btn:hover path {
+  fill: var(--color-accent) !important;
+}

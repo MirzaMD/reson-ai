@@ -1,0 +1,78 @@
+{
+  "name": "Quad Diagonal Arm",
+  "plane": "xy",
+  "nodes": [
+    { "id": "n1", "x": -0.15, "y": 0.0 },
+    { "id": "n2", "x": 0.0, "y": 0.0 },
+    { "id": "n3", "x": 0.15, "y": 0.0 }
+  ],
+  "members": [
+    {
+      "id": "m1",
+      "n1": "n1",
+      "n2": "n2",
+      "material": "aluminium_6061",
+      "section": { "type": "rect", "w": 0.016, "h": 0.004 }
+    },
+    {
+      "id": "m2",
+      "n1": "n2",
+      "n2": "n3",
+      "material": "aluminium_6061",
+      "section": { "type": "rect", "w": 0.016, "h": 0.004 }
+    }
+  ],
+  "supports": [
+    { "node": "n2", "type": "spring", "ky": 2000, "kx": 2000, "kr": 0 }
+  ],
+  "components": [
+    {
+      "id": "c1",
+      "kind": "motor",
+      "member": "m1",
+      "s": 0.05,
+      "mass": 0.055,
+      "mount": { "preset": "rubber_medium", "kv": 100000, "zeta": 0.08 },
+      "excitation": {
+        "type": "unbalance",
+        "rpm_min": 1000,
+        "rpm_max": 12000,
+        "me": 2e-6,
+        "orders": [1],
+        "blades": 2
+      }
+    },
+    {
+      "id": "c2",
+      "kind": "motor",
+      "member": "m2",
+      "s": 0.95,
+      "mass": 0.055,
+      "mount": { "preset": "rubber_medium", "kv": 100000, "zeta": 0.08 },
+      "excitation": {
+        "type": "unbalance",
+        "rpm_min": 1000,
+        "rpm_max": 12000,
+        "me": 2e-6,
+        "orders": [1],
+        "blades": 2
+      }
+    },
+    {
+      "id": "c3",
+      "kind": "camera",
+      "member": "m1",
+      "s": 0.85,
+      "mass": 0.15,
+      "mount": { "preset": "silicone_gel", "kv": 50000, "zeta": 0.15 },
+      "limit_g": 0.5
+    }
+  ],
+  "analysis": {
+    "rpm_min": 500,
+    "rpm_max": 12000,
+    "n_points": 400,
+    "beam_zeta": 0.02,
+    "n_elements_per_member": 20
+  }
+} 
