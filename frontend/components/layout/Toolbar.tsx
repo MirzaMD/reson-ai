@@ -119,9 +119,16 @@ export default function Toolbar() {
 
   const handleOptimize = async () => {
     if (!design) return;
+
+    // Vibration-sensitive parts (those with an acceleration limit) may be
+    // repositioned along their member. Motors and fans are sources and stay put.
+    const movable: string[] = design.components
+      .filter((c) => c.limit_g != null && c.kind !== "motor" && c.kind !== "fan")
+      .map((c) => c.id);
+
     setUi({ isOptimizing: true, error: null });
     try {
-      const result = await optimize(design);
+      const result = await optimize(design, {}, "min_sensor_accel", movable);
       setOptimizeResult(result);
 
       if (result.candidates.length === 0) {
@@ -130,13 +137,17 @@ export default function Toolbar() {
         return;
       }
 
-      const best = result.candidates[result.best_index] ?? result.candidates[0];
+      const bestIdx =
+        typeof result.best_index === "number" ? result.best_index : 0;
+      const best = result.candidates[bestIdx] ?? result.candidates[0];
       setActiveCandidate(best);
       setUi({ viewMode: "compare" });
 
+      const moved = best.changes.some((c) => c.path.endsWith(".s"));
+
       if (best.reduction_pct > 0) {
         showToast(
-          `Optimized mounts found: ${best.reduction_pct.toFixed(1)}% vibration reduction.`,
+          `${moved ? "Repositioned parts and tuned mounts" : "Optimized mounts found"}: ${best.reduction_pct.toFixed(1)}% vibration reduction.`,
           "success"
         );
       } else {
@@ -287,7 +298,7 @@ export default function Toolbar() {
           className="btn btn-secondary h-7 px-3 text-xs"
           onClick={handleOptimize}
           disabled={!design || !analysis || isOptimizing}
-          title="Optimize isolator mounts to dampen resonance"
+          title="Reposition sensitive parts and tune isolator mounts to dampen resonance"
         >
           {isOptimizing ? (
             <>
@@ -389,7 +400,7 @@ export default function Toolbar() {
                     3
                   </span>
                   <div>
-                    <strong className="text-ink font-semibold">Fix & Compare:</strong> Click Auto-fix to tune isolator mounts ($k_v$, $\zeta$), then toggle Compare to verify attenuation.
+                    <strong className="text-ink font-semibold">Fix &amp; Compare:</strong> Click Auto-fix to move sensitive parts and tune isolator mounts ($k_v$, $\zeta$), then toggle Compare to verify attenuation.
                   </div>
                 </div>
               </div>

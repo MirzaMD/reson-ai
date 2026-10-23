@@ -85,7 +85,18 @@ export default function StructureView({
   renderComponents = true,
 }: Props) {
   const meshNodes = useMemo(() => analysis?.mesh_nodes ?? [], [analysis]);
-  const elements = useMemo(() => buildElements(meshNodes), [meshNodes]);
+  const elements = useMemo(() => {
+  if (meshNodes.length > 0) return buildElements(meshNodes);
+  // No analysis yet: one element per design member, indexing design.nodes
+  const idx = new Map(design.nodes.map((n, i) => [n.id, i]));
+  const out: { a: number; b: number; member?: string }[] = [];
+  for (const m of design.members) {
+    const a = idx.get(m.n1);
+    const b = idx.get(m.n2);
+    if (a != null && b != null) out.push({ a, b, member: m.id });
+  }
+  return out;
+}, [meshNodes, design.nodes, design.members]);
 
   const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
   const ghostInstancedMeshRef = useRef<THREE.InstancedMesh>(null);
@@ -174,7 +185,9 @@ export default function StructureView({
         _tempColor.set("#38bdf8");
       } else if (!showMesh) {
         _tempColor.set("#6366f1");
-      } else {
+      } else if (!showMesh || !analysis) {
+  _tempColor.set(analysis ? "#6366f1" : "#64748b");
+    } else{ 
         const amp = analysis?.sweep.node_amp_mm?.[rpmIdx]?.[el.a] ?? 0;
         const t = Math.min(1, Math.max(0, amp / ampMax));
         const [r, g, b] = jet(t);
@@ -239,17 +252,17 @@ export default function StructureView({
 
     // 1. Update element transforms
     for (let i = 0; i < elements.length; i++) {
-      const el = elements[i];
-      const na = meshNodes[el.a];
-      const nb = meshNodes[el.b];
-      if (!na || !nb) continue;
+    const el = elements[i];
+    const na = undeformedPositions[el.a];
+    const nb = undeformedPositions[el.b];
+    if (!na || !nb) continue;
 
-      let uxa = 0, uya = 0, uxb = 0, uyb = 0;
+    let uxa = 0, uya = 0, uxb = 0, uyb = 0;
 
-      if (modeShapeData) {
-        uya = (modeShapeData[el.a]?.[1] ?? 0) * cosT * modeGain;
-        uyb = (modeShapeData[el.b]?.[1] ?? 0) * cosT * modeGain;
-      } else if (responseAt?.nodes) {
+    if (modeShapeData) {
+      uya = (modeShapeData[el.a]?.[1] ?? 0) * cosT * modeGain;
+      uyb = (modeShapeData[el.b]?.[1] ?? 0) * cosT * modeGain;
+    } else if (analysis && responseAt?.nodes) {
         const ra = responseAt.nodes[el.a];
         if (ra) {
           uxa = (ra.ux[0] * cosT - ra.ux[1] * sinT) * gain;
@@ -261,7 +274,6 @@ export default function StructureView({
           uyb = (rb.uy[0] * cosT - rb.uy[1] * sinT) * gain;
         }
       }
-
       _tempVecA.set(na.x + uxa, na.y + uya, 0);
       _tempVecB.set(nb.x + uxb, nb.y + uyb, 0);
 

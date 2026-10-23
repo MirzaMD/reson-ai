@@ -1,8 +1,8 @@
 # PROGRESS (backend / Person 1)
 
 ## Status
-Current milestone: Frontend Layout & UX Cleanup (Phase 2 of 2) - Complete
-Last updated: 2026-10-23 22:35 IST
+Current milestone: Agent cache-flow repair - Complete
+Last updated: 2026-10-23 20:05 UTC
 
 ## Milestones
 - [x] M0 Skeleton: FastAPI, CORS, .env, presets, schemas, mock /analyze
@@ -18,6 +18,64 @@ Last updated: 2026-10-23 22:35 IST
 - [x] M8 Hardening: perf, contract tests, drone demo tuning, frontend readiness
 - [x] Frontend Performance Fix (Phase 1): 60 FPS loop, InstancedMesh, Plotly memoization, granular selectors, response_at cache
 - [x] Frontend Layout & UX Cleanup (Phase 2): Light theme design tokens, Linear/Figma aesthetic, 48px top bar, 4-step workflow, 71.6% viewport share, focus mode
+
+## Milestone Agent cache-flow repair
+### What Was Built & Files Touched
+- `backend/app/agent/service.py`: Restored cache-hit logic inside the cache membership check, with a response return only on a hit. Cache misses now proceed to the LLM path. Initialized the warning list before cache lookup.
+
+### Test Results
+- `cd backend && pytest -q tests/test_agent.py tests/test_agent_smoke.py`:
+  ```
+  15 passed, 2 skipped, 1 warning in 8.04s
+  ```
+- `cd backend && pytest -q tests/test_agent.py -k cache`:
+  ```
+  1 passed, 11 deselected, 1 warning in 0.83s
+  ```
+- Pylance no longer reports undefined variables or unreachable code in `service.py`.
+
+### Decisions and Assumptions
+- This was a control-flow/indentation bug, not a missing library import. Existing imports already included the provider classes.
+
+### Known Issues
+- Pylance reports some unused imports and the editor-selected environment cannot resolve several installed backend dependencies; neither produced an error for the repaired cache flow.
+- The changed service file contains pre-existing trailing whitespace on the prompt-version line.
+
+### Exact Next Step
+- No further step for this repair; address the Pylance interpreter/dependency configuration if those unresolved imports are still displayed in the editor.
+
+## Milestone OpenRouter provider and live model smoke-check
+### What Was Built & Files Touched
+- `backend/app/agent/provider.py`: Added an OpenRouter chat-completions adapter and provider factory selection via `LLM_PROVIDER`; API keys are sent only in the Authorization header.
+- `backend/app/agent/service.py`: Applied existing live-call rate limiting to both Gemini and OpenRouter.
+- `backend/app/agent/__init__.py`: Exported the OpenRouter adapter.
+- `backend/scripts/llm_smoke.py`: Made provider error messages generic; script validates the same exact echo response.
+- `backend/tests/test_agent_smoke.py`: Added provider selection and mocked OpenRouter request tests.
+- `backend/.env.example`: Added OpenRouter key/model settings and made it the sample provider.
+- `backend/README.md`: Documented OpenRouter smoke-check setup.
+- `backend/.env`: Switched `LLM_PROVIDER` to `openrouter`; kept the user's API key private.
+
+### Test & Connectivity Results
+- `cd backend && pytest -q tests/test_agent.py tests/test_agent_smoke.py`:
+  ```
+  15 passed, 2 skipped, 1 warning in 9.08s
+  ```
+- `cd backend && python scripts/llm_smoke.py`:
+  ```
+  LLM smoke test succeeded in 1867.5 ms:
+  {'ok': True, 'echo': 'resonai'}
+  ```
+- The OpenRouter model defaults to `openai/gpt-4o-mini`; override with `OPENROUTER_MODEL`.
+
+### Decisions and Assumptions
+- Added provider support to the shared backend factory so app chat and the smoke script use OpenRouter consistently.
+- Kept Gemini supported and selected OpenRouter in the local `.env`.
+
+### Known Issues
+- The focused agent run reports one existing Starlette/httpx deprecation warning.
+
+### Exact Next Step
+- Milestone complete; review the successful live OpenRouter smoke-check before choosing further backend work.
 
 ## Milestone Frontend Layout & UX Cleanup (Phase 2) Summary
 ### What Was Built & Files Touched
@@ -819,3 +877,24 @@ Checking /analyze schema compliance on: Live /analyze endpoint...
 ### 6. Next Step
 - Full project verification complete. System is ready for live end-to-end user demonstrations and showcase.
 
+## Milestone Backend LLM model smoke-check
+### What Was Built & Files Touched
+- `backend/scripts/llm_smoke.py`: A smoke call now counts as successful only if the provider returns a JSON object with `ok: true` and echoes the requested word exactly.
+- `backend/tests/test_agent_smoke.py`: Added offline tests for a valid response and an incorrect echoed word.
+- `backend/README.md`: Documented how to configure and run the model connectivity check.
+
+### Test & Connectivity Results
+- Focused tests: `2 passed, 1 skipped in 0.15s`.
+- Live command: `cd backend && python scripts/llm_smoke.py`
+- Actual result: `[ERROR] 404: Invalid model ID. Please check GEMINI_MODEL in backend/.env`
+- `backend/.env` was present; the configured model name is `gemini-2.5-flash` (no credentials were displayed).
+
+### Decisions and Assumptions
+- Reused the existing `llm_smoke.py` and provider adapter rather than introducing another script or provider dependency.
+- The request/response check confirms the model returns structured JSON and handles the exact prompt; it does not validate physics or the full agent workflow.
+
+### Known Issues
+- The live request returned HTTP 404 for the configured Gemini model, so live model connectivity is not yet verified as working.
+
+### Exact Next Step
+- Verify the configured Gemini model identifier and API access, then rerun `cd backend && python scripts/llm_smoke.py`.

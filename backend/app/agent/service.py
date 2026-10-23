@@ -17,13 +17,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from app.agent.fallback import fallback_chat, template_explanation
 from app.agent.ops import OpError, apply_ops, describe_op
 from app.agent.prompts import build_messages, build_system_prompt, compact_design
-from app.agent.provider import GeminiLLM, LLMError, get_llm
+from app.agent.provider import GeminiLLM, LLMError, OpenRouterLLM, get_llm
 from app.cache import canonical_design_dict
 from app.schemas import AgentChatRequest, AgentChatResponse, ChatMessage
 
 # Cache file path in backend/cache/agent_cache.json
 CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "cache"
 CACHE_FILE = CACHE_DIR / "agent_cache.json"
+PROMPT_VERSION = "2026-10-24-a"  
 
 _rate_limit_lock = threading.Lock()
 _last_live_call_time: float = 0.0
@@ -67,6 +68,7 @@ def _compute_cache_key(
         msg_history.append({"role": r, "content": c})
 
     key_payload = {
+        "v": PROMPT_VERSION,
         "mode": mode,
         "design": clean_d,
         "messages": msg_history[-6:],
@@ -152,6 +154,8 @@ def handle_chat(
     # 1. Cache Lookup
     cache_key = _compute_cache_key(mode, design, messages_raw, analysis)
     cache = _load_cache()
+    warning_list: List[str] = []
+    ops_ok = True
     if cache_key in cache:
         cached_entry = cache[cache_key]
         ops = cached_entry.get("ops", [])
@@ -162,11 +166,11 @@ def handle_chat(
             warnings = [f"Cached ops could not be applied: {e}"]
             ops = []
 
-        op_desc = [describe_op(op) for op in ops]
+        op_descriptions = [describe_op(op) for op in ops]
         return AgentChatResponse(
             assistant_message=cached_entry.get("assistant_message", ""),
             ops=ops,
-            op_descriptions=op_desc,
+            op_descriptions=op_descriptions,
             design=patched_design,
             warnings=warnings,
             action=cached_entry.get("action"),
@@ -178,10 +182,8 @@ def handle_chat(
     client = llm or get_llm()
     system_prompt = build_system_prompt(mode)
     prompt_messages = build_messages(mode, design, analysis, candidates, messages_raw)
-
     llm_output: Optional[Dict[str, Any]] = None
     llm_failed = False
-    warning_list: List[str] = []
 
     # Number verification input ground-truth set for explain mode
     input_numbers: Set[float] = set()
@@ -192,7 +194,7 @@ def handle_chat(
             input_numbers.update(_extract_all_numbers(candidates))
 
     # Rate limiting: enforce minimum 1 second spacing between live LLM calls
-    if isinstance(client, GeminiLLM):
+    if isinstance(client, (GeminiLLM, OpenRouterLLM)):
         with _rate_limit_lock:
             now = time.perf_counter()
             elapsed = now - _last_live_call_time
@@ -301,7 +303,7 @@ def handle_chat(
     )
 
     # 5. Save to Cache on LLM success
-    if source == "llm":
+    if source == "llm" and ops_ok:
         cache[cache_key] = {
             "assistant_message": assistant_msg,
             "ops": ops,

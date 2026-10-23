@@ -1,8 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { useStore } from "@/lib/store/useStore";
+import { analyze } from "@/lib/api/client";
 import type { MetricsBlock } from "@/lib/types/contract";
-import { ArrowRight, Check, Activity, TrendingDown, Layers } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Activity,
+  TrendingDown,
+  Layers,
+  Loader2,
+} from "lucide-react";
 import clsx from "clsx";
 
 export default function ComparePanel() {
@@ -10,7 +19,11 @@ export default function ComparePanel() {
   const activeCandidate = useStore((s) => s.activeCandidate);
   const setActiveCandidate = useStore((s) => s.setActiveCandidate);
   const applyCandidate = useStore((s) => s.applyCandidate);
+  const setAnalysis = useStore((s) => s.setAnalysis);
   const setUi = useStore((s) => s.setUi);
+  const showToast = useStore((s) => s.showToast);
+
+  const [applying, setApplying] = useState(false);
 
   if (!optimizeResult || optimizeResult.candidates.length === 0) {
     return (
@@ -22,14 +35,18 @@ export default function ComparePanel() {
 
   const cand = activeCandidate ?? optimizeResult.candidates[0];
 
-  const getCameraPeak = (m?: MetricsBlock): number => {
+  /** Worst peak acceleration among vibration-sensitive parts (those with a limit). */
+  const getSensitivePeak = (m?: MetricsBlock): number => {
     if (!m) return 0.5;
-    if (typeof m.camera_peak_g === "number") return m.camera_peak_g;
     if (m.components) {
-      if (m.components.camera?.peak_accel_g != null) return m.components.camera.peak_accel_g;
-      const values = Object.values(m.components);
-      if (values.length > 0 && values[0]?.peak_accel_g != null) return values[0].peak_accel_g;
+      const all = Object.values(m.components);
+      const limited = all.filter((c) => c?.limit_g != null);
+      const pool = limited.length > 0 ? limited : all;
+      if (pool.length > 0) {
+        return Math.max(...pool.map((c) => c?.peak_accel_g ?? 0));
+      }
     }
+    if (typeof m.camera_peak_g === "number") return m.camera_peak_g;
     return 0.5;
   };
 
@@ -40,11 +57,40 @@ export default function ComparePanel() {
     return 0.15;
   };
 
-  const camBefore = getCameraPeak(cand.metrics_before);
-  const camAfter = getCameraPeak(cand.metrics_after);
-  const reduction = camBefore > 0 ? ((1 - camAfter / camBefore) * 100).toFixed(1) : "0.0";
+  const camBefore = getSensitivePeak(cand.metrics_before);
+  const camAfter = getSensitivePeak(cand.metrics_after);
+  const reduction =
+    camBefore > 0 ? ((1 - camAfter / camBefore) * 100).toFixed(1) : "0.0";
   const stressBefore = getStressRatio(cand.metrics_before);
   const stressAfter = getStressRatio(cand.metrics_after);
+
+  /**
+   * Apply the candidate to the live design, leave compare mode, and re-run the
+   * analysis on the applied design so Findings never sit empty.
+   */
+  const handleApplyFix = async () => {
+    if (applying) return;
+    setApplying(true);
+
+    // Capture the exact design being applied before the store changes.
+    const appliedDesign = structuredClone(cand.design);
+
+    applyCandidate(cand);
+    setUi({ viewMode: "single", isAnalyzing: true, error: null });
+
+    try {
+      const result = await analyze(appliedDesign);
+      setAnalysis(result);
+      showToast("Fix applied. Findings updated.", "success");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Analysis failed";
+      setUi({ error: msg });
+      showToast(`Fix applied, but re-analysis failed: ${msg}`, "warning");
+    } finally {
+      setUi({ isAnalyzing: false });
+      setApplying(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2 p-3 text-xs bg-surface border-t border-line">
@@ -82,11 +128,11 @@ export default function ComparePanel() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-panel/40 px-3 py-2">
         {/* Metrics comparison */}
         <div className="flex items-center gap-6">
-          {/* Camera Acceleration */}
+          {/* Sensitive-part acceleration */}
           <div className="flex items-center gap-2 font-mono">
             <div className="flex items-center gap-1 text-muted text-[11px]">
               <Activity size={13} className="text-accent" />
-              <span>Camera Accel:</span>
+              <span>Worst Payload Accel:</span>
             </div>
             <span className="text-danger font-medium line-through">
               {camBefore.toFixed(2)} g RMS
@@ -125,6 +171,7 @@ export default function ComparePanel() {
               <span
                 key={i}
                 className="rounded bg-surface px-1.5 py-0.5 font-mono text-[10px] text-ink border border-line truncate"
+                title={ch.label}
               >
                 {ch.label}
               </span>
@@ -138,19 +185,27 @@ export default function ComparePanel() {
             type="button"
             className="btn btn-outline h-7 px-2.5 text-xs text-ink-2"
             onClick={() => setUi({ viewMode: "single" })}
+            disabled={applying}
           >
             Exit Compare
           </button>
           <button
             type="button"
             className="btn btn-primary h-7 px-3 text-xs shadow-xs"
-            onClick={() => {
-              applyCandidate(cand);
-              setUi({ viewMode: "single" });
-            }}
+            onClick={handleApplyFix}
+            disabled={applying}
           >
-            <Check size={13} />
-            <span>Apply Fix</span>
+            {applying ? (
+              <>
+                <Loader2 size={13} className="animate-spin" />
+                <span>Applying...</span>
+              </>
+            ) : (
+              <>
+                <Check size={13} />
+                <span>Apply Fix</span>
+              </>
+            )}
           </button>
         </div>
       </div>

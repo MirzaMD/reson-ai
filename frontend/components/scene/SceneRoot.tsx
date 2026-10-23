@@ -347,9 +347,12 @@ export default function SceneRoot({
   }
 
   // Clear cache if design changes
-  useEffect(() => {
-    responseCache.current.clear();
-  }, [design]);
+useEffect(() => {
+  responseCache.current.clear();
+  if (!isCompareSecondary && customDesign === undefined) {
+    setResponseAt(null);
+  }
+}, [design, isCompareSecondary, customDesign, setResponseAt]);
 
   useEffect(() => {
     // The secondary comparison scene must not overwrite global response state.

@@ -464,3 +464,27 @@ def optimize_design(
         evaluations=total_evals,
         note=summary_note,
     )
+
+S_MIN, S_MAX = 0.05, 0.95   # keep parts off supports and joints
+MIN_S_GAP = 0.08            # min spacing between parts on one member (fraction of span)
+
+
+def spacing_penalty(design: Dict[str, Any], movable_cids: List[str]) -> float:
+    """Penalize a movable part sitting on top of another part on the same member."""
+    if not movable_cids:
+        return 0.0
+    moving = set(movable_cids)
+    by_member: Dict[Any, List[Dict[str, Any]]] = {}
+    for c in design.get("components", []):
+        by_member.setdefault(c.get("member"), []).append(c)
+    pen = 0.0
+    for comps in by_member.values():
+        for i in range(len(comps)):
+            for j in range(i + 1, len(comps)):
+                a, b = comps[i], comps[j]
+                if a["id"] not in moving and b["id"] not in moving:
+                    continue
+                gap = abs(float(a["s"]) - float(b["s"]))
+                if gap < MIN_S_GAP:
+                    pen += 5.0 * (MIN_S_GAP - gap) / MIN_S_GAP
+    return pen

@@ -1,8 +1,8 @@
-"""LLM provider adapter for Google Gemini with structured JSON output.
+"""LLM provider adapters for structured JSON output.
 
 Security rules:
 - API keys are NEVER logged or printed.
-- Keys are passed via headers (x-goog-api-key), not URL query parameters.
+- Keys are passed via authorization headers, not URL query parameters.
 - Error messages never expose secrets or raw authorization headers.
 """
 
@@ -124,6 +124,96 @@ class GeminiLLM:
         raise LLMError(f"LLM call failed after retry: {last_exception}")
 
 
-def get_llm() -> GeminiLLM:
-    """Factory returning configured LLM client."""
-    return GeminiLLM()
+class OpenRouterLLM:
+    """Client for OpenRouter's OpenAI-compatible chat completions API."""
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        timeout_s: Optional[float] = None,
+    ):
+        self.api_key = api_key if api_key is not None else os.getenv("OPENROUTER_API_KEY", "")
+        self.model = model or os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+        timeout_val = timeout_s or os.getenv("LLM_TIMEOUT_S", "20")
+        try:
+            self.timeout_s = float(timeout_val)
+        except ValueError:
+            self.timeout_s = 20.0
+
+    def chat_json(
+        self,
+        system: str,
+        messages: List[Dict[str, str]],
+    ) -> Dict[str, Any]:
+        """Send chat messages to OpenRouter and return the parsed JSON object."""
+        if not self.api_key:
+            raise LLMError("OPENROUTER_API_KEY is not configured in backend/.env")
+        if not self.model:
+            raise LLMError("OPENROUTER_MODEL is not configured in backend/.env")
+
+        request_messages = [{"role": "system", "content": system}]
+        for message in messages:
+            role = message.get("role", "user")
+            request_messages.append({
+                "role": "assistant" if role in ("assistant", "model") else "user",
+                "content": str(message.get("content", "")),
+            })
+        body = {
+            "model": self.model,
+            "messages": request_messages,
+            "response_format": {"type": "json_object"},
+            "temperature": 0.2,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        last_exception = None
+        for attempt in range(2):
+            try:
+                with httpx.Client(timeout=self.timeout_s) as client:
+                    response = client.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        headers=headers,
+                        json=body,
+                    )
+
+                if response.status_code != 200:
+                    raise LLMError(
+                        f"OpenRouter API failed with HTTP {response.status_code}."
+                    )
+
+                try:
+                    data = response.json()
+                    content = data["choices"][0]["message"]["content"]
+                    result = json.loads(content)
+                except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+                    raise LLMError(
+                        "OpenRouter response did not contain a valid JSON object."
+                    ) from exc
+                if not isinstance(result, dict):
+                    raise LLMError("OpenRouter response must be a JSON object.")
+                return result
+            except httpx.RequestError as exc:
+                last_exception = exc
+                if attempt == 0:
+                    continue
+                raise LLMError(
+                    f"Network error communicating with OpenRouter: {type(exc).__name__}"
+                ) from exc
+            except LLMError:
+                raise
+
+        raise LLMError(f"OpenRouter call failed after retry: {last_exception}")
+
+
+def get_llm() -> GeminiLLM | OpenRouterLLM:
+    """Return the LLM client selected by LLM_PROVIDER."""
+    provider = os.getenv("LLM_PROVIDER", "gemini").strip().lower()
+    if provider == "gemini":
+        return GeminiLLM()
+    if provider == "openrouter":
+        return OpenRouterLLM()
+    raise LLMError(f"Unsupported LLM_PROVIDER '{provider}'. Use 'gemini' or 'openrouter'.")

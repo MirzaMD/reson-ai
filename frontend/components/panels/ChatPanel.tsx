@@ -8,7 +8,7 @@ import clsx from "clsx";
 
 const QUICK_PROMPTS = [
   "Why is camera shaking?",
-  "How do I fix the resonance?",
+  "How do I fix the resonance?", 
   "Soften camera mounts",
 ];
 
@@ -82,7 +82,7 @@ export default function ChatPanel() {
       const res = await agentChat({
         mode: agentMode,
         design: activeDesign,
-        analysis: analysis ?? undefined,
+        analysis: analysis ? ({ findings: analysis.findings } as typeof analysis) : undefined,
         messages: [...chatMessages, userMsg],
       });
 

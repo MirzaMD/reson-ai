@@ -178,7 +178,8 @@ export async function responseAt(
 export async function optimize(
   design: Design,
   locks: { positions?: boolean; mounts?: boolean; damping?: boolean } = {},
-  objective = "min_sensor_accel"
+  objective = "min_sensor_accel",
+  movable: string[] = []
 ): Promise<OptimizeResult> {
   if (USE_MOCK) {
     return runClientOptimization(design);
@@ -186,13 +187,7 @@ export async function optimize(
 
   return request<OptimizeResult>("/optimize", {
     method: "POST",
-    body: JSON.stringify({
-      design,
-      locks,
-      objective,
-      budget: { max_evals: 1200 },
-      seed: 1,
-    }),
+    body: JSON.stringify({ design, locks, objective, movable, budget: { max_evals: 1200 }, seed: 1 }),
   });
 }
 

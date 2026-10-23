@@ -1,4 +1,4 @@
-"""Small smoke test verifying Gemini LLM connectivity and structured JSON parsing.
+"""Small smoke test verifying configured LLM connectivity and structured JSON parsing.
 
 Usage:
     python scripts/llm_smoke.py [word]
@@ -24,6 +24,13 @@ def run_smoke(word: str = "vibration") -> dict:
     result = llm.chat_json(system=system, messages=messages)
     elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
+    if not isinstance(result, dict):
+        raise LLMError("LLM response must be a JSON object")
+    if result.get("ok") is not True:
+        raise LLMError("LLM response did not include ok=true")
+    if result.get("echo") != word:
+        raise LLMError(f"LLM response did not echo the requested word '{word}'")
+
     print(f"LLM smoke test succeeded in {elapsed_ms:.1f} ms:")
     print(result)
     return result
@@ -36,9 +43,9 @@ def main():
     except LLMError as err:
         err_msg = str(err)
         if "404" in err_msg:
-            print(f"[ERROR] 404: Invalid model ID. Please check GEMINI_MODEL in backend/.env")
+            print(f"[ERROR] 404: Invalid model ID. Check the selected provider's model setting in backend/.env")
         elif "429" in err_msg:
-            print(f"[ERROR] 429: Gemini API rate limit or quota exceeded.")
+            print(f"[ERROR] 429: Provider rate limit or quota exceeded.")
         else:
             print(f"[ERROR] LLM test failed: {err_msg}")
         sys.exit(1)

@@ -309,7 +309,9 @@ def generate_findings(
             elif len(unique_cids) == 2:
                 sources_str = f"'{unique_cids[0]}' and '{unique_cids[1]}'"
             else:
-                sources_str = f"{', '.join(f'\'{c}\'' for c in unique_cids[:-1])}, and '{unique_cids[-1]}'"
+                quoted_cids = [f"'{c}'" for c in unique_cids[:-1]]
+                sources_str = f"{', '.join(quoted_cids)}, and '{unique_cids[-1]}'"
+
 
             o_val = best_source["order"]
             order_str = f"{int(o_val)}x" if o_val.is_integer() else f"{o_val:g}x"

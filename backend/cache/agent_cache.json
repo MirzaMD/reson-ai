@@ -1,0 +1,203 @@
+{
+  "3f8af3932b887c41da1675b78e49f1914269445e49ed4ee1652d837cac23bb32": {
+    "assistant_message": "Added a camera on member m1 at midspan (50%) with a silicone gel isolation mount.",
+    "ops": [
+      {
+        "op": "add_component",
+        "args": {
+          "id": "camera_1",
+          "kind": "camera",
+          "member": "m1",
+          "s": 0.5,
+          "mass": 0.15,
+          "mount": {
+            "preset": "silicone_gel",
+            "kv": 40000.0,
+            "zeta": 0.15
+          },
+          "limit_g": 0.5
+        }
+      }
+    ],
+    "action": "run_analysis",
+    "clarifying_question": null
+  },
+  "e5ab78d33d06f790348a5bad796d45e87fd0d78d954b2c87102d80630b380946": {
+    "assistant_message": "Moved the camera from midspan to the right end of member m1 (100% along the span).",
+    "ops": [
+      {
+        "op": "move_component",
+        "args": {
+          "id": "camera_1",
+          "member": "m1",
+          "s": 1.0
+        }
+      }
+    ],
+    "action": "run_analysis",
+    "clarifying_question": null
+  },
+  "8d11dd0ce5de8b8147c9f26e6a4ac3d56a871d3faeecff7c25fdd4d2501c0fcd": {
+    "assistant_message": "Moved the camera from the right end to the left end of member m1 (0% along the span).",
+    "ops": [
+      {
+        "op": "move_component",
+        "args": {
+          "id": "camera_1",
+          "member": "m1",
+          "s": 0.0
+        }
+      }
+    ],
+    "action": "run_analysis",
+    "clarifying_question": null
+  },
+  "ba2ec5eef105b2daaa5d256670074483f439d6a5058721ef06f9c610343cac34": {
+    "assistant_message": "Moved the camera from the left end to the center of member m1 (50% along the span).",
+    "ops": [
+      {
+        "op": "move_component",
+        "args": {
+          "id": "camera_1",
+          "member": "m1",
+          "s": 0.5
+        }
+      }
+    ],
+    "action": "run_analysis",
+    "clarifying_question": null
+  },
+  "ab1280bef97eebd363c2f32a9d09e39313fd56a65cbcaa0b9ad184c1c0375e49": {
+    "assistant_message": "Added a cooling fan at the right end of member m1 (100% along the span) to help mitigate vibration issues.",
+    "ops": [
+      {
+        "op": "add_component",
+        "args": {
+          "id": "fan_end",
+          "kind": "fan",
+          "member": "m1",
+          "s": 1.0,
+          "mass": 0.2,
+          "mount": {
+            "preset": "silicone_gel",
+            "kv": 40000,
+            "zeta": 0.15
+          },
+          "limit_g": 0.5
+        }
+      }
+    ],
+    "action": "run_analysis",
+    "clarifying_question": null
+  },
+  "c00fbb25a93202e0e5b00317ca60021b49f1be4b08922d7d501150129d0cb971": {
+    "assistant_message": "Added a camera at the right end of member m1 and a cooling fan at the center of m1.",
+    "ops": [
+      {
+        "op": "add_component",
+        "args": {
+          "id": "camera_right",
+          "kind": "camera",
+          "member": "m1",
+          "s": 1.0,
+          "mass": 0.15,
+          "mount": {
+            "preset": "silicone_gel",
+            "kv": 40000.0,
+            "zeta": 0.15
+          },
+          "limit_g": 0.5
+        }
+      },
+      {
+        "op": "add_component",
+        "args": {
+          "id": "fan_center",
+          "kind": "fan",
+          "member": "m1",
+          "s": 0.5,
+          "mass": 0.2,
+          "mount": {
+            "preset": "silicone_gel",
+            "kv": 40000.0,
+            "zeta": 0.15
+          },
+          "limit_g": 0.5
+        }
+      }
+    ],
+    "action": "run_analysis",
+    "clarifying_question": null
+  },
+  "b165f9fec934a73a2cd943ffc2ba19b4468c0bc4f78e9d31e822d1a58ad3ff5e": {
+    "assistant_message": "Added a gyro at the center of m1, a camera at the right end (n2), and a motor at the left end (n1).",
+    "ops": [
+      {
+        "op": "add_component",
+        "args": {
+          "id": "gyro_center",
+          "kind": "gyro",
+          "member": "m1",
+          "s": 0.5,
+          "mass": 0.1,
+          "mount": {
+            "preset": "silicone_gel",
+            "kv": 40000.0,
+            "zeta": 0.15
+          },
+          "limit_g": 0.5
+        }
+      },
+      {
+        "op": "add_component",
+        "args": {
+          "id": "camera_end",
+          "kind": "camera",
+          "member": "m1",
+          "s": 1.0,
+          "mass": 0.15,
+          "mount": {
+            "preset": "silicone_gel",
+            "kv": 40000.0,
+            "zeta": 0.15
+          },
+          "limit_g": 0.5
+        }
+      },
+      {
+        "op": "add_component",
+        "args": {
+          "id": "motor_start",
+          "kind": "motor",
+          "member": "m1",
+          "s": 0.0,
+          "mass": 0.1,
+          "mount": {
+            "preset": "rubber_soft",
+            "kv": 20000.0,
+            "zeta": 0.1
+          },
+          "excitation": {
+            "type": "unbalance",
+            "me": 2e-06
+          }
+        }
+      }
+    ],
+    "action": "run_analysis",
+    "clarifying_question": null
+  },
+  "a8d9a32b7d2ea33a8a2b43af9f219390f512f6569a077ea0841449bcd5689963": {
+    "assistant_message": "Removed the battery component from the design.",
+    "ops": [
+      {
+        "op": "remove_component",
+        "args": {
+          "id": "battery_center"
+        }
+      }
+    ],
+    "action": "run_analysis",
+    "clarifying_question": null
+  }
+}
