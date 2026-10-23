@@ -36,13 +36,32 @@ const BASE =
 // Per-endpoint timeout budgets in milliseconds
 const ENDPOINT_TIMEOUTS: Record<string, number> = {
   "/analyze": 30_000,
-  "/response_at": 15_000,
+  "/response_at": 5_000,
   "/optimize": 60_000,
   "/agent/chat": 45_000,
   "/validate": 30_000,
   "/presets": 10_000,
   "/health": 5_000,
 };
+
+function combineSignals(
+  signalA: AbortSignal,
+  signalB?: AbortSignal | null
+): AbortSignal {
+  if (!signalB) return signalA;
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any([signalA, signalB]);
+  }
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  if (signalA.aborted || signalB.aborted) {
+    controller.abort();
+    return controller.signal;
+  }
+  signalA.addEventListener("abort", onAbort, { once: true });
+  signalB.addEventListener("abort", onAbort, { once: true });
+  return controller.signal;
+}
 
 async function request<T>(
   path: string,
@@ -59,9 +78,7 @@ async function request<T>(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const combinedSignal = options?.signal
-      ? AbortSignal.any([controller.signal, options.signal])
-      : controller.signal;
+    const combinedSignal = combineSignals(controller.signal, options?.signal);
 
     const res = await fetch(`${BASE}${path}`, {
       ...options,
@@ -81,10 +98,19 @@ async function request<T>(
 
     return (await res.json()) as T;
   } catch (error: unknown) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(
+    if (
+      error instanceof Error &&
+      (error.name === "AbortError" || error.name === "DOMException")
+    ) {
+      // If the caller cancelled the request, rethrow the original AbortError
+      if (options?.signal?.aborted) {
+        throw error;
+      }
+      const timeoutError = new Error(
         `Solver API ${path} timed out after ${(timeoutMs / 1000).toFixed(0)} seconds.`
       );
+      timeoutError.name = "TimeoutError";
+      throw timeoutError;
     }
 
     if (error instanceof TypeError) {
@@ -129,11 +155,24 @@ export async function responseAt(
     return getResponseAtRpm(design, rpm);
   }
 
-  return request<ResponseAt>("/response_at", {
-    method: "POST",
-    body: JSON.stringify({ design, rpm }),
-    signal,
-  });
+  try {
+    return await request<ResponseAt>(
+      "/response_at",
+      {
+        method: "POST",
+        body: JSON.stringify({ design, rpm }),
+        signal,
+      },
+      5_000
+    );
+  } catch (error: unknown) {
+    // If request was aborted by caller, rethrow so caller handles abort
+    if (signal?.aborted || (error instanceof Error && error.name === "AbortError")) {
+      throw error;
+    }
+    // If backend is unreachable or timed out, gracefully fall back to local client solver
+    return getResponseAtRpm(design, rpm);
+  }
 }
 
 export async function optimize(

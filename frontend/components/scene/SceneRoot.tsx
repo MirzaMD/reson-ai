@@ -4,6 +4,24 @@ import { responseAt as fetchResponseAt } from "@/lib/api/client";
 import { useRef, useEffect, useMemo, useCallback } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 
+// Suppress upstream Three.js deprecation warning emitted by @react-three/fiber r183+
+if (typeof window !== "undefined") {
+  const w = window as unknown as { __threeClockWarnFiltered?: boolean };
+  if (!w.__threeClockWarnFiltered) {
+    w.__threeClockWarnFiltered = true;
+    const origWarn = console.warn;
+    console.warn = (...args: unknown[]) => {
+      if (
+        typeof args[0] === "string" &&
+        args[0].includes("THREE.Clock: This module has been deprecated")
+      ) {
+        return;
+      }
+      origWarn.apply(console, args);
+    };
+  }
+}
+
 import {
   OrbitControls,
   Grid,
@@ -360,11 +378,19 @@ export default function SceneRoot({
     // 3. Keep animating previous response while new response loads
     fetchResponseAt(design, roundedRpm, controller.signal)
       .then((result) => {
+        if (controller.signal.aborted) return;
         responseCache.current.set(roundedRpm, result);
         setResponseAt(result);
       })
       .catch((error: unknown) => {
-        if (error instanceof Error && error.name === "AbortError") {
+        if (
+          controller.signal.aborted ||
+          (error instanceof Error &&
+            (error.name === "AbortError" ||
+              error.name === "TimeoutError" ||
+              error.message.toLowerCase().includes("abort") ||
+              error.message.toLowerCase().includes("timed out")))
+        ) {
           return;
         }
         console.error("[responseAt] Request failed:", error);
