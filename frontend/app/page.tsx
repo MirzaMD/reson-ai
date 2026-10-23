@@ -20,7 +20,7 @@ import PerfOverlay from "@/components/ui/PerfOverlay";
 import { useStore } from "@/lib/store/useStore";
 import { STRUCTURE_PRESETS } from "@/lib/presets/presets";
 import { runClientSimulation } from "@/lib/solver/clientSolver";
-import { analyze } from "@/lib/api/client";
+import { analyze, getPresetDesign } from "@/lib/api/client";
 
 // 3D canvas must be client-only (no SSR)
 const SceneRoot = dynamic(() => import("@/components/scene/SceneRoot"), {
@@ -62,20 +62,27 @@ export default function HomePage() {
   const pushHistory = useStore((s) => s.pushHistory);
   const setAnalysis = useStore((s) => s.setAnalysis);
   const setUi = useStore((s) => s.setUi);
-  const ui = useStore((s) => s.ui);
+  const viewMode = useStore((s) => s.ui.viewMode);
+  const isAnalyzing = useStore((s) => s.ui.isAnalyzing);
+  const isOptimizing = useStore((s) => s.ui.isOptimizing);
   const optimizeResult = useStore((s) => s.optimizeResult);
   const activeCandidate = useStore((s) => s.activeCandidate);
 
-  // Initialize with Quadcopter hero preset if empty on first load
+  // Initialize with Quadcopter hero preset fetched from backend if empty on first load
   useEffect(() => {
     if (!design) {
-      const hero = STRUCTURE_PRESETS[0];
-      const d = structuredClone(hero.design);
-      setDesign(d);
-      pushHistory(d);
-      analyze(d)
+      getPresetDesign("drone")
+        .then((fetched) => {
+          const d = fetched ?? structuredClone(STRUCTURE_PRESETS[0].design);
+          setDesign(d);
+          pushHistory(d);
+          return analyze(d);
+        })
         .then(setAnalysis)
         .catch((error: unknown) => {
+          const fallback = structuredClone(STRUCTURE_PRESETS[0].design);
+          setDesign(fallback);
+          pushHistory(fallback);
           setUi({
             error:
               error instanceof Error
@@ -88,7 +95,7 @@ export default function HomePage() {
 
   // Compute optimized candidate simulation and shared max amplitude for Compare View
   const { candSim, sharedMaxAmp } = useMemo(() => {
-    if (ui.viewMode !== "compare" || !optimizeResult) {
+    if (viewMode !== "compare" || !optimizeResult) {
       return { candSim: null, sharedMaxAmp: 1 };
     }
     const cand = activeCandidate ?? optimizeResult.candidates[0];
@@ -110,7 +117,7 @@ export default function HomePage() {
     }
     const sharedMax = Math.max(maxOrig, maxCand);
     return { candSim: cSim, sharedMaxAmp: sharedMax };
-  }, [ui.viewMode, optimizeResult, activeCandidate, analysis]);
+  }, [viewMode, optimizeResult, activeCandidate, analysis]);
 
   // Keyboard shortcut: Delete or Backspace removes currently selected component
   useEffect(() => {
@@ -151,7 +158,7 @@ export default function HomePage() {
           <div className="relative flex min-w-0 flex-1 flex-col">
             {/* 3D Viewport Area */}
             <div className="relative min-h-0 flex-1">
-              {ui.viewMode === "compare" && optimizeResult ? (
+              {viewMode === "compare" && optimizeResult ? (
                 <div className="flex h-full flex-col">
                   <div className="relative flex flex-1">
                     {/* Left viewport: original design */}
@@ -194,10 +201,10 @@ export default function HomePage() {
                 </ErrorBoundary>
               )}
 
-              {(ui.isAnalyzing || ui.isOptimizing) && (
+              {(isAnalyzing || isOptimizing) && (
                 <LoadingOverlay
                   message={
-                    ui.isOptimizing
+                    isOptimizing
                       ? "Searching for pad stiffness and damping that reduce shaking…"
                       : "Running the vibration simulation…"
                   }

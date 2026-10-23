@@ -59,13 +59,17 @@ async function request<T>(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const combinedSignal = options?.signal
+      ? AbortSignal.any([controller.signal, options.signal])
+      : controller.signal;
+
     const res = await fetch(`${BASE}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
         ...options?.headers,
       },
-      signal: controller.signal,
+      signal: combinedSignal,
     });
 
     if (!res.ok) {
@@ -118,7 +122,8 @@ export async function analyze(design: Design): Promise<AnalysisResult> {
 
 export async function responseAt(
   design: Design,
-  rpm: number
+  rpm: number,
+  signal?: AbortSignal
 ): Promise<ResponseAt> {
   if (USE_MOCK) {
     return getResponseAtRpm(design, rpm);
@@ -127,6 +132,7 @@ export async function responseAt(
   return request<ResponseAt>("/response_at", {
     method: "POST",
     body: JSON.stringify({ design, rpm }),
+    signal,
   });
 }
 
